@@ -1,4 +1,5 @@
 from SpriteSheet import *
+from button import Button  # fixed Button class you have now
 import pygame
 from pygame.math import Vector2
 import sys
@@ -10,9 +11,9 @@ FPS = 60
 
 GROUND_Y = HEIGHT - 20
 
-GRAVITY = 1800  # px/s^2
-MOVE_SPEED = 30  # px/s
-JUMP_SPEED = 700  # px/s
+GRAVITY = 1800
+MOVE_SPEED = 30  
+JUMP_SPEED = 700  
 
 PLAYER_W, PLAYER_H = 48, 64
 ATTACK_DURATION = 0.18
@@ -34,6 +35,15 @@ CONTROLS = {
     "p2": {"left": pygame.K_LEFT, "right": pygame.K_RIGHT, "jump": pygame.K_UP, "light": pygame.K_KP1, "heavy": pygame.K_KP2, "crouch": pygame.K_DOWN,
            "light_alt": pygame.K_k, "heavy_alt": pygame.K_l}
 }
+
+CHARACTERS = [
+    ("Fighter", "IMG/sprites/Fighter/Idle.png"),
+    ("Lightning-Mage", "IMG/sprites/Lightning-Mage/Idle.png"),
+    ("Samurai", "IMG/sprites/Samurai/Idle.png"),
+    ("Fire-Wizard", "IMG/sprites/Fire-Wizard/Idle.png"),
+    ("Soldier", "IMG/sprites/Soldier/Idle.png"),
+    ("Wanderer-Magican", "IMG/sprites/Wanderer-Magican/Idle.png")
+]
 
 class Player:
     def __init__(self, pos, colour, controls, character_choice, facing_right=True):
@@ -73,6 +83,7 @@ class Player:
 
         self.crouching = False
         self.state = "idle"
+        self.on_ground = True  # add this, needed for jumping
 
     def animate(self, animation):
         self.animating = True
@@ -89,7 +100,6 @@ class Player:
         return pygame.Rect(int(self.pos.x), int(self.pos.y - self.h), self.w, self.h)
 
     def attack_hitbox(self):
-        """Return a rect for the attack hitbox based on facing and attack type."""
         if not self.attacking:
             return None
         reach = 36 if self.attack_type == "light" else 56
@@ -191,11 +201,10 @@ class Player:
             return
         self.health = max(0, self.health - amount)
         if self.health <= 0:
+            self.animate("/Dead.png")
             self.alive = False
 
 def resolve_attacks(p1, p2):
-    """Check attack hitboxes and apply damage."""
-    # p1 hits p2?
     for attacker, defender in ((p1, p2), (p2, p1)):
         hb = attacker.attack_hitbox()
         if hb and defender.rect().colliderect(hb):
@@ -219,43 +228,146 @@ def draw_text_center(surf, text, size, x, y, colour=WHITE):
     rect = r.get_rect(center=(x, y))
     surf.blit(r, rect)
 
-def main():
-    pygame.init()
-    pygame.mixer.music.load("sound_effects/OG_street_fighter_music.mp3")
-    pygame.mixer_music.play()
-    pygame.mixer_music.set_volume(0.04)
-    
-    Character_select_screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
-    Characters_selected = []
-    while len(Characters_selected) < 2:
-        Characters_selected.append(1)
-        #Character_select_screen.blit()
-    Fighting_screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+def get_first_frame(spritesheet_path, frame_width, frame_height, scale=1.0):
+    sheet = pygame.image.load(spritesheet_path).convert_alpha()
+    frame_surface = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA)
+    frame_surface.blit(sheet, (0, 0), pygame.Rect(0, 0, frame_width, frame_height))
+    if scale != 1.0:
+        new_size = (int(frame_width * scale), int(frame_height * scale))
+        frame_surface = pygame.transform.scale(frame_surface, new_size)
+    return frame_surface
 
+def initialise_buttons(exclude_characters=[]):
+    buttons = []
+    start_x = 200
+    start_y = 200
+    padding_x = 300
+    padding_y = 300
+
+    font = pygame.font.SysFont("Consolas", 20)
+    frame_w, frame_h = 130, 130
+    scale = 1.5
+
+    for i, (name, img_path) in enumerate(CHARACTERS):
+        if name in exclude_characters:
+            continue
+        image = get_first_frame(img_path, frame_w, frame_h, scale)
+        x = start_x + (i % 3) * padding_x
+        y = start_y + (i // 3) * padding_y
+        btn = Button(
+            image=image,
+            pos=(x, y),
+            text_input=name,
+            font=font,
+            base_colour=WHITE,
+            hovering_colour=YELLOW
+            )
+        buttons.append(btn)
+    return buttons
+
+def character_select_screen(screen):
+    pygame.display.set_caption("Select Your Character")
+    clock = pygame.time.Clock()
+    selected_characters = []
+    turn = 1  # Player 1 first
+
+    while True:
+        screen.fill(BLACK)
+        font = pygame.font.SysFont("Consolas", 30)
+        prompt = f"PLEASE SELECT YOUR CHARACTER PLAYER {turn}"
+        text_surface = font.render(prompt, True, WHITE)
+        screen.blit(text_surface, (50, 50))
+
+        buttons = initialise_buttons(exclude_characters=selected_characters)
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        for btn in buttons:
+            btn.change_colour(mouse_pos)
+            btn.update(screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for btn in buttons:
+                    if btn.check_for_input(mouse_pos):
+                        selected_characters.append(btn.text_input)
+                        print(f"Player {turn} chose {btn.text_input}")
+                        turn += 1
+                        if turn > 2:
+                            return selected_characters  # both players picked
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+def play_fighting_music():
+    # Play music, volume settings
+    pygame.mixer.music.load("sound_effects/OG_street_fighter_music.mp3")
+    pygame.mixer.music.play(-1)  # loop
+    pygame.mixer.music.set_volume(0.4)
+
+class MainMenu:
+    def __init__(self, screen):
+        self.screen = screen
+        self.font = pygame.font.SysFont("Consolas", 50)
+        self.start_button = Button(
+            image=None,
+            pos=(WIDTH // 2, HEIGHT // 2),
+            text_input="Press to start the game",
+            font=self.font,
+            base_colour=WHITE,
+            hovering_colour=YELLOW
+        )
+
+    def run(self):
+        clock = pygame.time.Clock()
+
+        while True:
+            self.screen.fill(BLACK)
+            mouse_pos = pygame.mouse.get_pos()
+
+            self.start_button.change_colour(mouse_pos)
+            screen.blit(self.start_button.text, self.start_button.text_rect)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.start_button.check_for_input(mouse_pos):
+                        return
+
+            pygame.display.flip()
+            clock.tick(FPS)
+
+def main(screen):
     pygame.display.set_caption("Street-Fighter-Inspired (prototype)")
     clock = pygame.time.Clock()
 
-    #initialise the players
-    p1 = Player(pos=(100, GROUND_Y), colour=BLUE, controls=CONTROLS["p1"], character_choice="Fighter", facing_right=True)
+    selected_chars = character_select_screen(screen)
+    player1_char, player2_char = selected_chars[0], selected_chars[1]
 
-    p2 = Player(pos=(WIDTH - 150, GROUND_Y), colour=RED, controls=CONTROLS["p2"], character_choice="Fire-Wizard", facing_right=False)
-
+    p1 = Player(pos=(100, GROUND_Y), colour=BLUE, controls=CONTROLS["p1"], character_choice=player1_char, facing_right=True)
+    p2 = Player(pos=(WIDTH - 150, GROUND_Y), colour=RED, controls=CONTROLS["p2"], character_choice=player2_char, facing_right=False)
+    play_fighting_music()
     round_over = False
     round_winner = None
 
-    font = pygame.font.SysFont("Consolas", 20)
-
     while True:
+        screen.fill(BLACK)
         dt = clock.tick(FPS) / 1000.0
         scaled_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
-        Fighting_screen.blit(scaled_image, (0, 0))
+        screen.blit(scaled_image, (0, 0))
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-            # single key presses
             if e.type == pygame.KEYDOWN:
 
                 if e.key == p1.controls["jump"]:
@@ -301,6 +413,8 @@ def main():
                 elif e.key == pygame.K_r and round_over:
                     p1.health = MAX_HEALTH; p1.alive = True; p1.pos = Vector2(100, GROUND_Y); p1.vel = Vector2(0,0)
                     p2.health = MAX_HEALTH; p2.alive = True; p2.pos = Vector2(WIDTH - 150, GROUND_Y); p2.vel = Vector2(0,0)
+                    p1.animate("/Idle.png")
+                    p2.animate("/Idle.png")
                     round_over = False
                     round_winner = None
 
@@ -308,7 +422,7 @@ def main():
                     pygame.quit()
                     sys.exit()
 
-        # accounts for holding keys
+        # holding keys
         keys = pygame.key.get_pressed()
 
         if keys[p1.controls["left"]]:
@@ -340,6 +454,7 @@ def main():
             if p2.state not in ("idle", "jumping", "attacking", "crouching"):
                 p2.state = "idle"
                 p2.animate("/Idle.png")
+
         if not round_over:
             p1.update(dt, keys)
             p2.update(dt, keys)
@@ -362,27 +477,34 @@ def main():
                 round_winner = "Player 1" if p2.health == 0 else "Player 2" if p1.health == 0 else None
                 round_end_time = time.time()
 
-        pygame.draw.rect(Fighting_screen, (30, 30, 40), (0, GROUND_Y + 1, WIDTH, HEIGHT - GROUND_Y))
+        pygame.draw.rect(screen, (30, 30, 40), (0, GROUND_Y + 1, WIDTH, HEIGHT - GROUND_Y))
 
-        # Draw players
-        p1.draw(Fighting_screen)
-        p2.draw(Fighting_screen)
-        # Draw health bars
-        draw_health_bar(Fighting_screen, 40, 20, 380, 26, p1.health, MAX_HEALTH, BLUE)
-        draw_health_bar(Fighting_screen, WIDTH - 420, 20, 380, 26, p2.health, MAX_HEALTH, RED)
+        p1.draw(screen)
+        p2.draw(screen)
+
+        draw_health_bar(screen, 40, 20, 380, 26, p1.health, MAX_HEALTH, BLUE)
+        draw_health_bar(screen, WIDTH - 420, 20, 380, 26, p2.health, MAX_HEALTH, RED)
+
         # Names
-        Fighting_screen.blit(font.render("PLAYER 1", True, WHITE), (40, 46))
-        Fighting_screen.blit(font.render("PLAYER 2", True, WHITE), (WIDTH - 420, 46))
+        font = pygame.font.SysFont("Consolas", 30)
+        screen.blit(font.render("PLAYER 1", True, WHITE), (40, 46))
+        screen.blit(font.render("PLAYER 2", True, WHITE), (WIDTH - 420, 46))
 
         # Draw simple round state
         if round_over:
-            draw_text_center(Fighting_screen, f"{round_winner} WINS!", 48, WIDTH//2, HEIGHT//2 - 40, GREEN)
-            draw_text_center(Fighting_screen, "Press R to rematch", 20, WIDTH//2, HEIGHT//2 + 10, WHITE)
+            draw_text_center(screen, f"{round_winner} WINS!", 48, WIDTH//2, HEIGHT//2 - 40, GREEN)
+            draw_text_center(screen, "Press R to rematch", 20, WIDTH//2, HEIGHT//2 + 10, WHITE)
         else:
             # show controls hint
-            draw_text_center(Fighting_screen, "P1: A/D move W jump F/G attacks | P2: Arrows move Up jump K/L attacks", 18, WIDTH//2, HEIGHT - 18, WHITE)
+            draw_text_center(screen, "P1: A/D move W jump F/G attacks | P2: Arrows move Up jump K/L attacks", 18, WIDTH//2, HEIGHT - 18, WHITE)
 
         pygame.display.flip()
 
 if __name__ == "__main__":
-    main()
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT),pygame.FULLSCREEN )  # normal windowed mode for menu
+
+    menu = MainMenu(screen)
+    menu.run()  # Show the main menu first
+    
+    main(screen)  # After starting, run the game loop
