@@ -1,19 +1,20 @@
 import pygame
 
 class Button:
-    def __init__(self, image, pos, text_input, font, base_colour, hovering_colour):
+    def __init__(self, image, pos, text_input, font, base_colour, hovering_colour, text_offset):
         self.image = image
         self.x_pos, self.y_pos = pos
         self.text_input = text_input
         self.font = font
         self.base_colour = base_colour
         self.hovering_colour = hovering_colour
+        self.text_offset = text_offset
         self.text = self.font.render(self.text_input, True, self.base_colour)
         
         # If no image, default to text surface
         if self.image is None:
             self.image = self.text
-        text_y = self.y_pos - 50  
+        text_y = self.y_pos - self.text_offset  
         self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
         self.text_rect = self.text.get_rect(center=(self.x_pos, text_y))
     
