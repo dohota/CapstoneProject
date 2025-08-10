@@ -5,7 +5,6 @@ from pygame.math import Vector2
 import sys
 import time
 
-background_image = pygame.image.load("IMG/stages/castle.png")
 WIDTH, HEIGHT = 1050, 800
 FPS = 60
 
@@ -35,7 +34,14 @@ CONTROLS = {
     "p2": {"left": pygame.K_LEFT, "right": pygame.K_RIGHT, "jump": pygame.K_UP, "light": pygame.K_KP1, "heavy": pygame.K_KP2, "crouch": pygame.K_DOWN,
            "light_alt": pygame.K_k, "heavy_alt": pygame.K_l}
 }
-
+MAPS = [
+    ("Day-fallen-city", "IMG/stages/Day-fallen-city.png"),
+    ("Night-fallen-city", "IMG/stages/Night-fallen-city.png"),
+    ("throne-room", "IMG/stages/throne-room.png"),
+    ("Castle-entrance", "IMG/stages/castle-entrance.png"),
+    ("Graveyard", "IMG/stages/Graveyard.png"),
+    ("Ruins", "IMG/stages/Ruins.png")
+]
 CHARACTERS = [
     ("Fighter", "IMG/sprites/Fighter/Idle.png"),
     ("Lightning-Mage", "IMG/sprites/Lightning-Mage/Idle.png"),
@@ -192,9 +198,10 @@ class Player:
         rect.midbottom = (self.pos.x + self.w // 2, int(self.pos.y))
         surf.blit(img, rect)
 
-        hb = self.attack_hitbox()
-        if hb:
-            pygame.draw.rect(surf, (255, 0, 0, 50), hb, 2)
+        # draws the hitbox for debugging
+        #hb = self.attack_hitbox()
+        #if hb:
+            #pygame.draw.rect(surf, (255, 0, 0, 50), hb, 2)
 
     def take_damage(self, amount):
         if not self.alive:
@@ -237,7 +244,7 @@ def get_first_frame(spritesheet_path, frame_width, frame_height, scale=1.0):
         frame_surface = pygame.transform.scale(frame_surface, new_size)
     return frame_surface
 
-def initialise_buttons(exclude_characters=[]):
+def initialise_buttons(exclude_characters=[], button_type = ""):
     buttons = []
     start_x = 200
     start_y = 200
@@ -245,13 +252,23 @@ def initialise_buttons(exclude_characters=[]):
     padding_y = 300
 
     font = pygame.font.SysFont("Consolas", 20)
-    frame_w, frame_h = 130, 130
+    frame_w, frame_h = 150, 130
     scale = 1.5
 
-    for i, (name, img_path) in enumerate(CHARACTERS):
+    if(button_type == "CHARACTERS"):
+        enumerator = CHARACTERS
+    if(button_type == "MAPS"):
+        enumerator = MAPS
+    for i, (name, img_path) in enumerate(enumerator):
         if name in exclude_characters:
             continue
-        image = get_first_frame(img_path, frame_w, frame_h, scale)
+        if(button_type == "CHARACTERS"):
+            image = get_first_frame(img_path, frame_w, frame_h, scale)
+            text_offset = 50
+        if (button_type == "MAPS"):
+            unscaled_image = pygame.image.load(img_path)
+            image = pygame.transform.smoothscale(unscaled_image, (175, 125))
+            text_offset = 100
         x = start_x + (i % 3) * padding_x
         y = start_y + (i // 3) * padding_y
         btn = Button(
@@ -260,7 +277,8 @@ def initialise_buttons(exclude_characters=[]):
             text_input=name,
             font=font,
             base_colour=WHITE,
-            hovering_colour=YELLOW
+            hovering_colour=YELLOW,
+            text_offset = text_offset
             )
         buttons.append(btn)
     return buttons
@@ -278,7 +296,7 @@ def character_select_screen(screen):
         text_surface = font.render(prompt, True, WHITE)
         screen.blit(text_surface, (50, 50))
 
-        buttons = initialise_buttons(exclude_characters=selected_characters)
+        buttons = initialise_buttons(exclude_characters=selected_characters, button_type="CHARACTERS")
 
         mouse_pos = pygame.mouse.get_pos()
 
@@ -298,7 +316,39 @@ def character_select_screen(screen):
                         print(f"Player {turn} chose {btn.text_input}")
                         turn += 1
                         if turn > 2:
+                            screen.fill(BLACK)
                             return selected_characters  # both players picked
+
+        pygame.display.flip()
+        clock.tick(FPS)
+def map_select_screen(screen):
+    pygame.display.set_caption("Select the map")
+    clock = pygame.time.Clock()
+    while True:
+        screen.fill(BLACK)
+        font = pygame.font.SysFont("Consolas", 30)
+        prompt = f"PLEASE SELECT THE MAP"
+        text_surface = font.render(prompt, True, WHITE)
+        screen.blit(text_surface, (50, 50))
+
+        buttons = initialise_buttons(exclude_characters=[], button_type="MAPS")
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        for btn in buttons:
+            btn.change_colour(mouse_pos)
+            btn.update(screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for btn in buttons:
+                    if btn.check_for_input(mouse_pos):
+                        selected_map = btn.text_input
+                        return selected_map
 
         pygame.display.flip()
         clock.tick(FPS)
@@ -319,7 +369,8 @@ class MainMenu:
             text_input="Press to start the game",
             font=self.font,
             base_colour=WHITE,
-            hovering_colour=YELLOW
+            hovering_colour=YELLOW,
+            text_offset=0
         )
 
     def run(self):
@@ -349,6 +400,10 @@ def main(screen):
     clock = pygame.time.Clock()
 
     selected_chars = character_select_screen(screen)
+    background_image_file_name = map_select_screen(screen)
+    background_image_file_path = "IMG/stages/" + background_image_file_name + ".png"
+    background_image = pygame.image.load(background_image_file_path)
+
     player1_char, player2_char = selected_chars[0], selected_chars[1]
 
     p1 = Player(pos=(100, GROUND_Y), colour=BLUE, controls=CONTROLS["p1"], character_choice=player1_char, facing_right=True)
