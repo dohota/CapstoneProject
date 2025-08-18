@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
-//import instance from './axio'; // 引入自定义的 axios 实例
+//import instance from './axio'; // 引入自定义axios 实例
 import '@/assets/style/reset.css'
 
 const app = createApp(App)

@@ -45,7 +45,7 @@ export default defineConfig({
     strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:8081/back',
+        target: 'http://localhost:8081/back',//后端地址
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       }
