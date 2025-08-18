@@ -1,0 +1,31 @@
+//这个错误信息表示 VSCode 在尝试加载 TypeScript 配置文件的 JSON Schema 时遇到了网络连接问题
+//具体来说，它无法从指定的 URL 加载 schema
+{
+  "extends": "@vue/tsconfig/tsconfig.web.json",
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "target": "esnext", // 或者 es2017, es2020 等
+    "lib": [
+      "dom",
+      "es2017" // 添加这一行
+    ],
+  },
+ /* Report errors in .js files. */
+  "checkJs": true,
+  /* Allow parsing javascript. */
+  "allowJs": true,
+  /* Do not emit outputs. */
+  "noEmit": true,
+  "references": [
+    {
+      "path": "./tsconfig.config.json"
+    }
+  ]
+}
+
+
+
