@@ -113,14 +113,14 @@ Public Class Form1
         Try
             Using cmd As New NpgsqlCommand(sql, conn)
                 Using reader As NpgsqlDataReader = cmd.ExecuteReader()
-                    output.AppendLine(String.Format("{0,-5} {1,-15} {2,-5}", "ID", "Name", "Age"))
+                    output.AppendLine(String.Format("{0,-5} {1,-17} {2,-5}", "username", "number", "created time"))
                     output.AppendLine(New String("-"c, 30))
 
                     While reader.Read()
                         Dim username As String = reader.GetString(0)
                         Dim email As String = reader.GetString(1)
                         Dim created_at As DateTime = reader.GetDateTime(2)
-                        output.AppendLine(String.Format("{0,-5} {1,-15} {2,-5}", username, email, created_at))
+                        output.AppendLine(String.Format("{0,-5} {1,-17} {2,-5}", username, email, created_at))
                     End While
                 End Using
             End Using
