@@ -1,11 +1,3 @@
-# FunnyGame
-# ├── src
-# │   ├── main.py              # FastAPI 启动入口
-# │   ├── database.py          # SQLite 相关
-# │   ├── models.py            # 数据模型（Pydantic / ORM）
-# │   ├── routers/             # 路由模块
-# │   │   └── api.py
-# │   └── static/              # 前端构建后的静态文件 (html/css/js)
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -24,11 +16,16 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+@app.get("/favicon.ico")
+def get_favicon():
+    return FileResponse("static/favicon.ico")
+
+
 @app.get("/")
 def read_index():
-    return FileResponse("static/index.html")
+    return FileResponse("static/MainPage.html")
 
 
-@app.get("/api/hello")
+@app.get("/hello")
 def hello():
-    return {"message": "Hello!!!!"} #json格式
+    return {"message": "Hello!!!!"}
