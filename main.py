@@ -27,12 +27,32 @@ def read_index():
     return FileResponse("static/mainpage.html")
 
 
-@app.get("/hello")
-def hello():
-    return {"message": "Hello!!!!"}
+@app.get("/intro")
+def read_index():
+    return FileResponse("static/personal.html")
 
 
-@app.get("/hello/{item_id}")
+@app.get("/conlang")
+def read_index():
+    return FileResponse("static/conlang.html")
+
+
+@app.get("/chess")
+def read_index():
+    return FileResponse("static/warchess.html")
+
+
+@app.get("/world")
+def read_index():
+    return FileResponse("static/rimworld.html")
+
+
+@app.get("/game")
+def read_index():
+    return FileResponse("static/smallgame.html")
+
+
+@app.get("/intro/{item_id}")
 async def read_item(item_id: int):
     return {"item_id": item_id}
 
