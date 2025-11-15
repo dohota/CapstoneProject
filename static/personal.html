@@ -32,9 +32,6 @@
     </style>
 </head>
 <body>
-
-<h2>纯前端 JS 增删改查表格</h2>
-
 <!-- 输入区 -->
 <input type="text" id="name" placeholder="姓名">
 <input type="text" id="age" placeholder="年龄">
@@ -58,44 +55,50 @@
 </table>
 
 <script>
-let idCounter = 1;
+//let idCounter = 1;
+async function loadData() {
+    const res = await fetch("http://127.0.0.1:8000/persons");
+    const data = await res.json();
 
-// 添加
-function addRow() {
+    const tbody = document.querySelector("#dataTable tbody");
+    tbody.innerHTML = ""; // 清空表格
+
+    data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${item.id}</td>
+            <td>${item.name}</td>
+            <td>${item.age}</td>
+            <td>
+                <button onclick="editRow(this)">编辑</button>
+                <button onclick="deleteRow(${item.id})">删除</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function addRow() {
     const name = document.getElementById("name").value.trim();
     const age = document.getElementById("age").value.trim();
-    if (!name || !age) {
-        alert("请输入姓名和年龄！");
-        return;
-    }
 
-    const table = document.getElementById("dataTable").querySelector("tbody");
+    const res = await fetch("http://127.0.0.1:8000/persons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, age })
+    });
 
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-        <td>${idCounter++}</td>
-        <td>${name}</td>
-        <td>${age}</td>
-        <td>
-            <button onclick="editRow(this)">编辑</button>
-            <button onclick="deleteRow(this)">删除</button>
-        </td>
-    `;
-
-    table.appendChild(row);
-
-    document.getElementById("name").value = "";
-    document.getElementById("age").value = "";
+    loadData(); // 重新加载表格
 }
 
-// 删除
-function deleteRow(btn) {
-    const row = btn.parentNode.parentNode;
-    row.remove();
+async function deleteRow(id) {
+    await fetch(`http://127.0.0.1:8000/persons/${id}`, {
+        method: "DELETE"
+    });
+
+    loadData();
 }
 
-// 编辑
 function editRow(btn) {
     const row = btn.parentNode.parentNode;
     const cells = row.children;
@@ -111,22 +114,21 @@ function editRow(btn) {
     btn.onclick = function () { saveRow(this) };
 }
 
-// 保存编辑内容
-function saveRow(btn) {
+async function saveRow(btn) {
     const row = btn.parentNode.parentNode;
-    const cells = row.children;
+    const id = row.children[0].innerText;
+    const name = row.children[1].querySelector("input").value;
+    const age = row.children[2].querySelector("input").value;
 
-    const name = cells[1].querySelector("input").value;
-    const age = cells[2].querySelector("input").value;
+    await fetch(`http://127.0.0.1:8000/persons/${id}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ name, age })
+    });
 
-    cells[1].innerText = name;
-    cells[2].innerText = age;
-
-    btn.innerText = "编辑";
-    btn.onclick = function () { editRow(this) };
+    loadData();
 }
 
-// 搜索
 function searchTable() {
     const keyword = document.getElementById("search").value.toLowerCase();
     const rows = document.querySelectorAll("#dataTable tbody tr");
