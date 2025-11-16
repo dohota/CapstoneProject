@@ -13,21 +13,20 @@ def get_db_connection() -> Connection:
 
 
 # 初始化数据库，创建用户表
-def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+# def init_db():
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute('''
+#         CREATE TABLE IF NOT EXISTS users (
+#             id INTEGER PRIMARY KEY AUTOINCREMENT,
+#             name TEXT NOT NULL,
+#             email TEXT UNIQUE NOT NULL
+#         )
+#     ''')
+#     conn.commit()
+#     conn.close()
 
 
-# 创建用户
 def create_user(name: str, email: str):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -43,7 +42,6 @@ def create_user(name: str, email: str):
         conn.close()
 
 
-# 查询用户 by ID
 def get_user_by_id(user_id: int) -> dict:
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -52,10 +50,8 @@ def get_user_by_id(user_id: int) -> dict:
     conn.close()
     if user:
         return dict(user)  # 将结果转换为字典格式
-    return None
 
 
-# 查询所有用户
 def get_all_users() -> list:
     conn = get_db_connection()
     cursor = conn.cursor()
