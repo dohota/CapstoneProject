@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from sql import models
+from sql.models import Database
 
 app = FastAPI() # docs_url=None, redoc_url=None, openapi_url=None)
 # 静态文件托管构建好的前端页面
@@ -31,7 +31,51 @@ def read_index():
 
 @app.get("/intro")
 def read_index():
-    return FileResponse("static/personal.html")
+    d1 = Database()
+    data = d1.search_all()
+    return {"data": data}
+    # FastAPI 会自动将 列表、字典等 转换为 JSON 格式
+
+
+@app.post("/intro")
+def create_index(name: str, age: int):
+    d2 = Database()
+    # 调用 create_field 插入新数据
+    result = d2.create_field(name, age)
+    # 如果插入成功，返回成功消息
+    if result is None:
+        print("failed to create!")
+    print("success!!")
+
+
+@app.delete("/intro")
+def del_index(user_id: int):
+    d3 = Database()
+    deleted_count = d3.delete_field(user_id)
+    # 如果删除的记录数大于 0，表示删除成功
+    if deleted_count > 0:
+        print("User ID:" + str(user_id) + "has deleted successfully")
+    else:
+        print("cannot find User ID:" + str(user_id) )
+
+
+@app.put("/intro")
+def update_index(user_id: int, name: str = None, age: int = None):
+    d4 = Database()
+    # 更新数据
+    updated_count = d4.update_field(user_id, name, age)
+    # 如果更新的记录数大于 0，表示更新成功
+    if updated_count > 0:
+        print("User ID:" + str(user_id) + "has updated successfully")
+        # return {"message": f"User with ID {user_id} updated successfully"}
+    else:
+        print("User ID:" + str(user_id) + "not found or no changes made")
+        # return {"message": f"User with ID {user_id} not found or no changes made"}
+
+
+@app.get("/intro/{num}")
+async def read_item(num: int):
+    return {"people_id": num}
 
 
 @app.get("/conlang")
@@ -54,10 +98,6 @@ def read_index():
     return FileResponse("static/smallgame.html")
 
 
-@app.get("/intro/{item_id}")
-async def read_item(item_id: int):
-    return {"item_id": item_id}
-
 clients = []
 
 
@@ -78,40 +118,3 @@ async def websocket_endpoint(ws: WebSocket):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
-
-# @app.get("/intro")
-# def read_index():
-#     return FileResponse("static/personal.html")
-#
-#
-# def get_persons(db: Session = Depends(get_db)):
-#     return db.query(Person).all()
-#
-# # search
-# #@app.get("/persons")
-#
-#
-# @app.post("/intro")
-# def create_person(person: PersonCreate, db: Session = Depends(get_db)):
-#     db_person = Person(name=person.name, age=person.age)
-#     db.add(db_person)
-#     db.commit()
-#     db.refresh(db_person)
-#     return db_person
-#
-#
-# @app.delete("/intro/{person_id}")
-# def delete_person(person_id: int, db: Session = Depends(get_db)):
-#     person = db.query(Person).filter(Person.id == person_id).first()
-#     db.delete(person)
-#     db.commit()
-#     return {"message": "deleted"}
-#
-#
-# @app.put("/intro/{person_id}")
-# def update_person(person_id: int, person: PersonCreate, db: Session = Depends(get_db)):
-#     db_person = db.query(Person).filter(Person.id == person_id).first()
-#     db_person.name = person.name
-#     db_person.age = person.age
-#     db.commit()
-#     return db_person

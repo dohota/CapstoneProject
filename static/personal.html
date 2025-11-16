@@ -55,11 +55,12 @@
 </table>
 
 <script>
-//let idCounter = 1;
 async function loadData() {
-    const res = await fetch("http://127.0.0.1:8000/persons");
+    const res = await fetch("http://127.0.0.1:8000/persons"); //默认是 GET 请求
     const data = await res.json();
-
+    //res.json() 把 HTTP 响应体解析成 JSON 对象
+    //await 等待解析完成
+    //最终 data 是一个数组
     const tbody = document.querySelector("#dataTable tbody");
     tbody.innerHTML = ""; // 清空表格
 
