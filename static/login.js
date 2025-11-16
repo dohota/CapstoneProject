@@ -10,3 +10,7 @@ function login() {
                 errorBox.style.display = "block";
             }
         }
+
+function navigate(path) {
+    history.pushState({}, "", path); // 改 URL
+}

@@ -3,11 +3,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from starlette.responses import HTMLResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 app = FastAPI() # docs_url=None, redoc_url=None, openapi_url=None)
+# 静态文件托管构建好的前端页面
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # 允许前端本地开发环境的跨域访问（开发阶段用）
 app.add_middleware(
     CORSMiddleware,
@@ -16,11 +16,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# 静态文件托管构建好的前端页面
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-app = FastAPI()
 
 
 @app.get("/favicon.ico")
