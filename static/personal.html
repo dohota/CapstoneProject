@@ -56,14 +56,15 @@
 
 <script>
 async function loadData() {
-    const res = await fetch("http://127.0.0.1:8000/persons"); //默认是 GET 请求
+    const res = await fetch("http://127.0.0.1:8000/intro",{
+        method: "GET",
+    }); // 其实默认是 GET 请求
     const data = await res.json();
     //res.json() 把 HTTP 响应体解析成 JSON 对象
     //await 等待解析完成
     //最终 data 是一个数组
     const tbody = document.querySelector("#dataTable tbody");
     tbody.innerHTML = ""; // 清空表格
-
     data.forEach(item => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -83,16 +84,16 @@ async function addRow() {
     const name = document.getElementById("name").value.trim();
     const age = document.getElementById("age").value.trim();
 
-    const res = await fetch("http://127.0.0.1:8000/persons", {
+    const res = await fetch(`http://127.0.0.1:8000/intro/${id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, age })
+        headers: { "Content-Type": "application/json" }, // 请求头，告诉服务器请求体是 JSON 格式
+        body: JSON.stringify({ name, age }) // 将 JavaScript 对象转换为 JSON 字符串并发送
     });
-    loadData(); // 重新加载表格
+    loadData();
 }
 
 async function deleteRow(id) {
-    await fetch(`http://127.0.0.1:8000/persons/${id}`, {
+    await fetch(`http://127.0.0.1:8000/intro/${id}`, {
         method: "DELETE"
     });
     loadData();
@@ -104,7 +105,6 @@ function editRow(btn) {
 
     const name = cells[1].innerText;
     const age = cells[2].innerText;
-
     // 替换成输入框
     cells[1].innerHTML = `<input value="${name}">`;
     cells[2].innerHTML = `<input value="${age}">`;
@@ -119,19 +119,17 @@ async function saveRow(btn) {
     const name = row.children[1].querySelector("input").value;
     const age = row.children[2].querySelector("input").value;
 
-    await fetch(`http://127.0.0.1:8000/persons/${id}`, {
+    await fetch(`http://127.0.0.1:8000/intro/${id}`, {
         method: "PUT",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ name, age })
     });
-
     loadData();
 }
 
 function searchTable() {
     const keyword = document.getElementById("search").value.toLowerCase();
     const rows = document.querySelectorAll("#dataTable tbody tr");
-
     rows.forEach(row => {
         const name = row.children[1].innerText.toLowerCase();
         row.style.display = name.includes(keyword) ? "" : "none";

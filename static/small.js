@@ -3,10 +3,18 @@ const ctx = canvas.getContext('2d');
 
 let player = {x: 200, y: 200, size: 20};
 
+// 存储所有玩家的位置
+let players = {};
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'blue';
-  ctx.fillRect(player.x, player.y, player.size, player.size);
+
+  // 绘制所有玩家
+  for (let id in players) {
+    const p = players[id];
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(p.x, p.y, player.size, player.size);
+  }
 }
 
 // 键盘控制移动
@@ -34,6 +42,11 @@ socket.addEventListener('open', () => {
 // 接收消息
 socket.addEventListener('message', (event) => {
   console.log('收到服务器消息:', event.data);
+  const message = JSON.parse(event.data);
+  if (message.type === 'update_positions') {
+    players = message.players;
+    draw(); // 更新画面
+  }
 });
 
 // 发送玩家位置

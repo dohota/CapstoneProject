@@ -1,10 +1,12 @@
+from typing import List
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from sql.models import Database
+from models import Database
 
 app = FastAPI() # docs_url=None, redoc_url=None, openapi_url=None)
 # 静态文件托管构建好的前端页面
@@ -31,6 +33,11 @@ def read_index():
 
 @app.get("/intro")
 def read_index():
+    return FileResponse("static/personal.html")
+
+
+@app.get("/intro/{user_id}")
+def read_index():
     d1 = Database()
     data = d1.search_all()
     return {"data": data}
@@ -48,7 +55,7 @@ def create_index(name: str, age: int):
     print("success!!")
 
 
-@app.delete("/intro")
+@app.delete("/intro/{user_id}")
 def del_index(user_id: int):
     d3 = Database()
     deleted_count = d3.delete_field(user_id)
@@ -59,7 +66,7 @@ def del_index(user_id: int):
         print("cannot find User ID:" + str(user_id) )
 
 
-@app.put("/intro")
+@app.put("/intro/{user_id}")
 def update_index(user_id: int, name: str = None, age: int = None):
     d4 = Database()
     # 更新数据
@@ -71,11 +78,6 @@ def update_index(user_id: int, name: str = None, age: int = None):
     else:
         print("User ID:" + str(user_id) + "not found or no changes made")
         # return {"message": f"User with ID {user_id} not found or no changes made"}
-
-
-@app.get("/intro/{num}")
-async def read_item(num: int):
-    return {"people_id": num}
 
 
 @app.get("/conlang")
@@ -98,23 +100,61 @@ def read_index():
     return FileResponse("static/smallgame.html")
 
 
-clients = []
+# 存储所有连接的 WebSocket 客户端
+connected_clients : List[WebSocket] = []
+
+# 存储每个客户端的位置信息
+players_position = {}
 
 
+# WebSocket 路由：所有的客户端会通过此路由连接到服务器
 @app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
-    await ws.accept()
-    clients.append(ws)
+async def websocket_endpoint(websocket: WebSocket):
+    # 接受连接
+    await websocket.accept()
+    # 将连接的 WebSocket 添加到列表中
+    connected_clients.append(websocket)
+    print(f"新连接: {websocket.client}")
     try:
         while True:
-            data = await ws.receive_text()
-            print("收到前端数据:", data)
-            # 可以广播给其他客户端
-            for client in clients:
-                if client != ws:
-                    await client.send_text(data)
+            # 接收来自客户端的消息
+            data = await websocket.receive_text()
+            # 解析玩家的位置信息
+            try:
+                message = eval(data)  # 将JSON字符串解析成字典
+                if message.get('type') == 'move':
+                    player_id = websocket.client  # 假设WebSocket客户端是玩家的唯一标识
+                    players_position[player_id] = (message['x'], message['y'])
+                    # 广播给所有连接的客户端
+                    await broadcast_player_positions()
+            except Exception as e:
+                print(f"消息处理失败: {e}")
+
     except WebSocketDisconnect:
-        clients.remove(ws)
+        # 如果断开连接，将该客户端从列表中移除
+        connected_clients.remove(websocket)
+        print(f"连接断开: {websocket.client}")
+
+        # 删除断开连接的玩家位置
+        player_id = websocket.client
+        if player_id in players_position:
+            del players_position[player_id]
+
+        # 广播更新后的所有玩家位置
+        await broadcast_player_positions()
+
+
+async def broadcast_player_positions():
+    # 将所有玩家的位置广播到所有连接的客户端
+    message = {
+        "type": "update_positions",
+        "players": players_position
+    }
+
+    # 将每个客户端的位置发送给所有连接的客户端
+    for client in connected_clients:
+        await client.send_text(str(message))
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
