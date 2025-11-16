@@ -19,34 +19,70 @@ class Database:
             ''', (name, age))
             self.conn.commit()
         except sqlite3.IntegrityError:
-            return None  # 如果电子邮件已存在
+            return None  # 如果age已存在
         finally:
             self.conn.close()
 
-    def delete_field(self):
+    def delete_field(self, user_id: int):
         self.database_init()
+        try:
+            # 执行删除语句
+            self.cursor.execute("DELETE FROM items WHERE id = ?", (user_id,))
+            self.conn.commit()  # 提交事务
+            return self.cursor.rowcount  # 返回删除的行数
+        except sqlite3.Error as e:
+            print(f"SQLite error: {e}")
+            return None
+        finally:
+            self.conn.close()
 
-    def update_field(self):
+    def update_field(self,  user_id: int, name: str = None, age: int = None):
         self.database_init()
+        try:
+            # 构建更新字段的列表
+            fields = []
+            values = []
 
-    def search_name(self, user_id: int) -> dict:
+            if name is not None:
+                fields.append("name = ?")
+                values.append(name)
+            if age is not None:
+                fields.append("age = ?")
+                values.append(age)
+
+            if not fields:
+                return 0  # 没有需要更新的字段
+
+            values.append(user_id)  # WHERE 子句参数
+
+            sql = f"UPDATE items SET {', '.join(fields)} WHERE id = ?"
+            self.cursor.execute(sql, tuple(values))
+            self.conn.commit()
+            return self.cursor.rowcount  # 返回更新的行数
+        except sqlite3.Error as e:
+            print(f"SQLite error: {e}")
+            return None
+        finally:
+            self.conn.close()
+
+    def search_id(self, user_id: int) -> dict:
         self.database_init()
-        # self.cursor.execute('SELECT * FROM name WHERE id = ?', (user_id,))
-        # user = self.cursor.fetchone()  # 获取一行数据
-        # self.conn.close()
-        # if user:
-        #     return dict(user)  # 将结果转换为字典格式
+        self.cursor.execute('SELECT * FROM items WHERE id = ?', (user_id,))
+        u = self.cursor.fetchone()  # 获取一行数据
+        self.conn.close()
+        if u:
+            return dict(u)
 
     def search_all(self) -> list:
         self.database_init()
-        self.cursor.execute('SELECT * FROM name')
+        self.cursor.execute('SELECT * FROM items')
         users = self.cursor.fetchall()  # 获取所有行数据
         self.conn.close()
-        return [dict(user) for user in users]  # 返回字典列表
+        return [dict(user) for user in users]
 
 
+# unit test
 if __name__ == "__main__":
     d = Database()
-    d.create_field("Mary", 27)
-    d.create_field("Harry", 23)
-    d.create_field("Cindy Pay", 33)
+    d.update_field(1, "haha", 66)
+    d.delete_field(4)
