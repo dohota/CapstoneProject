@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
+from sql import models
 
 app = FastAPI() # docs_url=None, redoc_url=None, openapi_url=None)
 # 静态文件托管构建好的前端页面
