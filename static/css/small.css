@@ -1,0 +1,10 @@
+canvas{
+    border: 1px solid #000;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+    font-family: sans-serif;
+}
