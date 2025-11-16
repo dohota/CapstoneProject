@@ -1,10 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <title>War Chess</title>
+<meta charset="UTF-8">
+<title>War Chess</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+    font-family: sans-serif;
+  }
+  #gameBoard {
+    display: grid;
+    grid-template-columns: repeat(8, 50px);
+    grid-template-rows: repeat(8, 50px);
+    gap: 1px;
+    background-color: #333;
+  }
+  .cell {
+    width: 50px;
+    height: 50px;
+    background-color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  .unit {
+    width: 30px;
+    height: 30px;
+    background-color: red;
+    border-radius: 50%;
+  }
+  .highlight {
+    background-color: yellow;
+  }
+</style>
 </head>
 <body>
+<div id="gameBoard"></div>
 
+<script src="/static/game.js">
+
+</script>
 </body>
 </html>

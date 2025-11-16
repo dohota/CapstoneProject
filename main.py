@@ -1,18 +1,11 @@
-import uvicorn as uvicorn
-from fastapi import FastAPI, Depends
+import uvicorn
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.responses import HTMLResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
-
-from database import (
-    init_db,
-    create_item_db,
-    get_all_items,
-    update_item_db,
-    delete_item_db,
-)
 
 app = FastAPI() # docs_url=None, redoc_url=None, openapi_url=None)
 # 允许前端本地开发环境的跨域访问（开发阶段用）
@@ -29,15 +22,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app = FastAPI()
 
-# 启动时创建表
-init_db()
-
-
-class Item(BaseModel):
-    id: int
-    name: str
-    age: int
-
 
 @app.get("/favicon.ico")
 def get_favicon():
@@ -49,13 +33,18 @@ def read_index():
     return FileResponse("static/mainpage.html")
 
 
+@app.get("/intro")
+def read_index():
+    return FileResponse("static/personal.html")
+
+
 @app.get("/conlang")
 def read_index():
     return FileResponse("static/conlang.html")
 
 
 @app.get("/chess")
-def read_index():
+async def read_index():
     return FileResponse("static/warchess.html")
 
 
@@ -93,24 +82,7 @@ async def websocket_endpoint(ws: WebSocket):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
-# # 创建数据库表
-# Base.metadata.create_all(bind=engine)
-#
-#
-# class PersonCreate(BaseModel):
-#     name: str
-#     age: int
-#
-#
-# # 获取数据库连接
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-#
-#
+
 # @app.get("/intro")
 # def read_index():
 #     return FileResponse("static/personal.html")
@@ -147,4 +119,3 @@ if __name__ == "__main__":
 #     db_person.age = person.age
 #     db.commit()
 #     return db_person
-

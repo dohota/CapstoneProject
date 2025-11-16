@@ -2,7 +2,7 @@
 import sqlite3
 import os
 
-DB_FILE = "sql/data.db"
+DB_FILE = "sql/data.sqlite"
 
 
 def init_db():

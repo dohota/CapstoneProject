@@ -31,29 +31,6 @@ function navigate(path) {
     history.pushState({}, "", path); // 改 URL
 }
 </script>
-<!--<script>-->
-<!--document.getElementById("send1").addEventListener("click", () => {-->
-<!--    // 要发送到后端的数据-->
-<!--    const data = {-->
-<!--        msg: "前端来了！",-->
-<!--        time: new Date().toISOString()-->
-<!--    };-->
 
-<!--    // fetch 请求-->
-<!--    fetch("http://127.0.0.1:8000/update", {-->
-<!--        method: "POST",-->
-<!--        headers: {-->
-<!--            "Content-Type": "application/json"-->
-<!--        },-->
-<!--        body: JSON.stringify(data)  // 发送 JSON-->
-<!--    })-->
-<!--    .then(response => response.json())-->
-<!--    .then(result => {-->
-<!--        // 渲染后端返回的数据-->
-<!--        document.getElementById("result").innerText = "后端返回: " + result.status;-->
-<!--    })-->
-<!--    .catch(err => console.log("错误：", err));-->
-<!--});-->
-<!--</script>-->
 </body>
 </html>
