@@ -1,5 +1,5 @@
+import json
 from typing import List
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -101,13 +101,13 @@ def read_index():
 
 
 # 存储所有连接的 WebSocket 客户端
-connected_clients : List[WebSocket] = []
+connected_clients: List[WebSocket] = []
 
 # 存储每个客户端的位置信息
 players_position = {}
 
 
-# WebSocket 路由：所有的客户端会通过此路由连接到服务器
+# WebSocket 路由: 所有客户端都通过它连上服务端
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     # 接受连接
@@ -115,16 +115,19 @@ async def websocket_endpoint(websocket: WebSocket):
     # 将连接的 WebSocket 添加到列表中
     connected_clients.append(websocket)
     print(f"新连接: {websocket.client}")
+
     try:
         while True:
             # 接收来自客户端的消息
             data = await websocket.receive_text()
+
             # 解析玩家的位置信息
             try:
                 message = eval(data)  # 将JSON字符串解析成字典
                 if message.get('type') == 'move':
                     player_id = websocket.client  # 假设WebSocket客户端是玩家的唯一标识
                     players_position[player_id] = (message['x'], message['y'])
+
                     # 广播给所有连接的客户端
                     await broadcast_player_positions()
             except Exception as e:
@@ -150,10 +153,9 @@ async def broadcast_player_positions():
         "type": "update_positions",
         "players": players_position
     }
-
     # 将每个客户端的位置发送给所有连接的客户端
     for client in connected_clients:
-        await client.send_text(str(message))
+        await client.send_text(json.dumps(message))
 
 
 if __name__ == "__main__":
