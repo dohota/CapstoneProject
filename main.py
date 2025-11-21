@@ -1,7 +1,8 @@
 import json
+import os
 from typing import List
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Path
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -98,6 +99,19 @@ def read_index():
 @app.get("/game")
 def read_index():
     return FileResponse("static/smallgame.html")
+
+
+# 自定义静态文件响应（禁用缓存）
+@app.get("/static/{filename}")
+async def serve_static_file(filename: str):
+    file_path = Path("static") / filename
+    if file_path.exists() and file_path.is_file():
+        response = FileResponse(file_path)
+        # 设置缓存控制头，禁用缓存
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+        return response
+    else:
+        return {"error": "File not found"}
 
 
 # 存储所有连接的 WebSocket 客户端
