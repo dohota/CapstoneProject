@@ -6,9 +6,9 @@ import { Renderer } from '/static/chess/render.js';
 import { Warrior, Rider, Archer } from '/static/chess/unit.js';
 class Game {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
+        this.canvas = document.getElementById('gameCanvas');//canvas画板
         this.ctx = this.canvas.getContext('2d');
-        this.turnText = document.getElementById('turn-text');
+        this.turnText = document.getElementById('turn-text');//显示是哪一方的回合
         // 游戏数据
         this.map = new Map();
         this.units = [];

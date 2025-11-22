@@ -87,7 +87,7 @@ def read_index():
 
 @app.get("/chess")
 async def read_index():
-    return FileResponse("static/warchess.html")
+    return FileResponse("static/war.html")
 
 
 @app.get("/world")

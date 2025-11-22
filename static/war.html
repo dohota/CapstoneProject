@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>配置页面</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .player {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+    .remove-btn {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        float: right;
+    }
+    #addPlayer { margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<h2>玩家配置界面</h2>
+
+<button id="addPlayer">➕ 添加玩家</button>
+
+<form id="playerForm">
+    <div id="players"></div>
+
+    <button type="button" id="submitBtn">提交</button>
+    <button type="button" id="submitBtn2">默认提交</button>
+</form>
+
+<h2>地图配置界面</h2>
+<script>
+let playerId = 0;
+
+// 创建一个玩家配置区块
+function createPlayer() {
+    playerId++;
+
+    const div = document.createElement('div');
+    div.className = 'player';
+    div.id = `player-${playerId}`;
+
+    div.innerHTML = `
+        <button type="button" class="remove-btn" onclick="removePlayer(${playerId})">删除</button>
+        <h3>玩家 ${playerId}</h3>
+
+        <label>职业：</label>
+        <select name="job">
+            <option value="战士">战士</option>
+            <option value="法师">法师</option>
+            <option value="刺客">刺客</option>
+        </select>
+        <br><br>
+
+        <label>阵营：</label>
+        <select name="faction">
+            <option value="联盟">联盟</option>
+            <option value="部落">部落</option>
+            <option value="中立">中立</option>
+        </select>
+        <br><br>
+
+        <label>等级：</label>
+        <select name="level">
+            ${Array.from({length: 10}, (_,i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+        </select>
+    `;
+
+    return div;
+}
+
+// 添加玩家
+document.getElementById('addPlayer').onclick = () => {
+    document.getElementById('players').appendChild(createPlayer());
+};
+
+// 删除玩家
+function removePlayer(id) {
+    const div = document.getElementById(`player-${id}`);
+    if (div) div.remove();
+}
+
+// 提交
+document.getElementById('submitBtn').onclick = () => {
+    const playersDiv = document.querySelectorAll('.player');
+    const result = [];
+
+    playersDiv.forEach(p => {
+        result.push({
+            job: p.querySelector('select[name="job"]').value,
+            faction: p.querySelector('select[name="faction"]').value,
+            level: p.querySelector('select[name="level"]').value
+        });
+    });
+
+    console.log("提交的玩家信息：", result);
+    alert("玩家信息已打印到控制台！");
+};
+</script>
+
+</body>
+</html>
