@@ -3,6 +3,7 @@ import { HexMath } from '/static/chess/math.js';
 import { Camera } from '/static/chess/camera.js';
 import { InputSystem } from '/static/chess/input.js';
 import { Renderer } from '/static/chess/render.js';
+import { Warrior, Rider, Archer } from '/static/chess/unit.js';
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -23,7 +24,8 @@ class Game {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
             this.camera.resize(window.innerWidth, window.innerHeight);
-            this.draw(); // 强制重绘
+            //this.draw();
+            this.renderer.render(this, this.camera);// 强制重绘
         });
         // 初始化
         this.initCanvas();
@@ -48,13 +50,24 @@ class Game {
         }
         console.timeEnd("MapGen");
     }
+    // spawnUnits() {
+    //     // 模拟单位数据结构
+    //     const createUnit = (id, owner, q, r) => ({ id, owner, q, r, hp: 100 });
+    //     this.units.push(createUnit(1, 1, -2, 0));
+    //     this.units.push(createUnit(2, 2, 2, 0));
+    //     this.units.push(createUnit(3, 1, -10, 5));
+    //     this.units.push(createUnit(4, 2, 10, -5));
+    // }
+    // --- 修改：实例化不同的棋子 ---
     spawnUnits() {
-        // 模拟单位数据结构
-        const createUnit = (id, owner, q, r) => ({ id, owner, q, r, hp: 100 });
-        this.units.push(createUnit(1, 1, -2, 0));
-        this.units.push(createUnit(2, 2, 2, 0));
-        this.units.push(createUnit(3, 1, -10, 5));
-        this.units.push(createUnit(4, 2, 10, -5));
+        // 红方
+        this.units.push(new Warrior(-2, 0, 1));
+        this.units.push(new Archer(-3, -1, 1));
+        this.units.push(new Rider(-3, 1, 1));
+        // 蓝方
+        this.units.push(new Warrior(2, 0, 2));
+        this.units.push(new Archer(3, 1, 2));
+        this.units.push(new Rider(3, -1, 2));
     }
     // 核心交互逻辑
     handleInput(hex) {
@@ -73,15 +86,27 @@ class Game {
         this.selectedUnit = unit;
         this.calculateValidMoves(unit);
     }
+    // calculateValidMoves(unit) {
+    //     this.validMoves = [];
+    //     this.map.forEach(tile => {
+    //         const dist = HexMath.getDistance(unit, tile);
+    //         if (dist <= CONFIG.MOVE_RANGE && dist > 0) {
+    //             const isOccupied = this.units.some(u => u.q === tile.q && u.r === tile.r);
+    //             if (!isOccupied) {
+    //                 this.validMoves.push(tile);
+    //             }
+    //         }
+    //     });
+    // }
+    // 修改2：读取单位moveRange
     calculateValidMoves(unit) {
         this.validMoves = [];
         this.map.forEach(tile => {
             const dist = HexMath.getDistance(unit, tile);
-            if (dist <= CONFIG.MOVE_RANGE && dist > 0) {
+            // 关键修改：这里不再用全局 CONFIG.MOVE_RANGE，而是用 unit.moveRange
+            if (dist <= unit.moveRange && dist > 0) {
                 const isOccupied = this.units.some(u => u.q === tile.q && u.r === tile.r);
-                if (!isOccupied) {
-                    this.validMoves.push(tile);
-                }
+                if (!isOccupied) this.validMoves.push(tile);
             }
         });
     }
@@ -109,13 +134,13 @@ class Game {
     }
     // 游戏主循环
     loop() {
-        this.draw();
+        //this.draw();
+        this.renderer.render(this, this.camera);
         requestAnimationFrame(() => this.loop());
     }
-    draw() {
-        this.renderer.render(this, this.camera);
-    }
+    // draw() {
+    //     this.renderer.render(this, this.camera);
+    // }
 }
 
 const game = new Game();
-console.log(CONFIG.HEX_SIZE)
