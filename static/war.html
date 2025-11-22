@@ -24,21 +24,25 @@
 </head>
 <body>
 
-<h2>玩家配置界面</h2>
-
-<button id="addPlayer">➕ 添加玩家</button>
+<h2>玩家配置:</h2>
+<button id="addPlayer">添加玩家</button>
 
 <form id="playerForm">
     <div id="players"></div>
 
     <button type="button" id="submitBtn">提交</button>
+    <a href="/chess2" onclick="navigate('/chess2')">
     <button type="button" id="submitBtn2">默认提交</button>
+    </a>
+<!--   目前版本就通过默认提交来默认初始化游戏-->
 </form>
 
-<h2>地图配置界面</h2>
+<h2>地图配置:</h2>
 <script>
+function navigate(path) {
+    history.pushState({}, "", path); // 改 URL
+}
 let playerId = 0;
-
 // 创建一个玩家配置区块
 function createPlayer() {
     playerId++;

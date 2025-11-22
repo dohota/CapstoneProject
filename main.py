@@ -90,6 +90,11 @@ async def read_index():
     return FileResponse("static/war.html")
 
 
+@app.get("/chess2")
+async def read_index():
+    return FileResponse("static/warchess.html")
+
+
 @app.get("/world")
 def read_index():
     return FileResponse("static/rimworld.html")
