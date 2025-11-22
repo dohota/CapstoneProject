@@ -9,13 +9,13 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');//canvas画板
         this.ctx = this.canvas.getContext('2d');
         this.turnText = document.getElementById('turn-text');//显示是哪一方的回合
-        // 游戏数据
+
         this.map = new Map();
         this.units = [];
         this.currentPlayer = 1;
         this.selectedUnit = null;
         this.validMoves = [];
-        // 核心模块
+
         this.camera = new Camera(window.innerWidth, window.innerHeight);
         this.renderer = new Renderer(this.canvas, this.ctx);
         this.input = new InputSystem(this.canvas, this.camera, (hex) => this.handleInput(hex));
@@ -27,18 +27,10 @@ class Game {
             //this.draw();
             this.renderer.render(this, this.camera);// 强制重绘
         });
-        // 初始化
-        this.initCanvas();
-        this.generateMap();
-        this.spawnUnits();
-        // 启动循环
-        this.loop();
-    }
-    initCanvas() {
+        // 初始化Canvas
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-    }
-    generateMap() {
+        //初始化 画地图
         console.time("MapGen");
         for (let q = -CONFIG.MAP_RADIUS; q <= CONFIG.MAP_RADIUS; q++) {
             let r1 = Math.max(-CONFIG.MAP_RADIUS, -q - CONFIG.MAP_RADIUS);
@@ -48,23 +40,12 @@ class Game {
                 this.map.set(key, { q, r });
             }
         }
-        console.timeEnd("MapGen");
-    }
-    // spawnUnits() {
-    //     // 模拟单位数据结构
-    //     const createUnit = (id, owner, q, r) => ({ id, owner, q, r, hp: 100 });
-    //     this.units.push(createUnit(1, 1, -2, 0));
-    //     this.units.push(createUnit(2, 2, 2, 0));
-    //     this.units.push(createUnit(3, 1, -10, 5));
-    //     this.units.push(createUnit(4, 2, 10, -5));
-    // }
-    // --- 修改：实例化不同的棋子 ---
-    spawnUnits() {
-        // 红方
+        console.timeEnd("MapGen");//计算画地图花了多少时间，一般2-3ms
+        // 添加红方单位
         this.units.push(new Warrior(-2, 0, 1));
         this.units.push(new Archer(-3, -1, 1));
         this.units.push(new Rider(-3, 1, 1));
-        // 蓝方
+        // 添加蓝方单位
         this.units.push(new Warrior(2, 0, 2));
         this.units.push(new Archer(3, 1, 2));
         this.units.push(new Rider(3, -1, 2));
@@ -86,18 +67,6 @@ class Game {
         this.selectedUnit = unit;
         this.calculateValidMoves(unit);
     }
-    // calculateValidMoves(unit) {
-    //     this.validMoves = [];
-    //     this.map.forEach(tile => {
-    //         const dist = HexMath.getDistance(unit, tile);
-    //         if (dist <= CONFIG.MOVE_RANGE && dist > 0) {
-    //             const isOccupied = this.units.some(u => u.q === tile.q && u.r === tile.r);
-    //             if (!isOccupied) {
-    //                 this.validMoves.push(tile);
-    //             }
-    //         }
-    //     });
-    // }
     // 修改2：读取单位moveRange
     calculateValidMoves(unit) {
         this.validMoves = [];
@@ -134,13 +103,10 @@ class Game {
     }
     // 游戏主循环
     loop() {
-        //this.draw();
         this.renderer.render(this, this.camera);
         requestAnimationFrame(() => this.loop());
     }
-    // draw() {
-    //     this.renderer.render(this, this.camera);
-    // }
 }
-
+// draw() {     this.renderer.render(this, this.camera);}
 const game = new Game();
+game.loop()
