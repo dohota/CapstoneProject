@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>配置页面</title>
+<title>战棋 初始配置</title>
 <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     .player {
@@ -23,79 +23,97 @@
 </style>
 </head>
 <body>
-
 <h2>玩家配置:</h2>
 <button id="addPlayer">添加玩家</button>
-
 <form id="playerForm">
     <div id="players"></div>
-
-    <button type="button" id="submitBtn">提交</button>
-    <a href="/chess2" onclick="navigate('/chess2')">
-    <button type="button" id="submitBtn2">默认提交</button>
-    </a>
-<!--   目前版本就通过默认提交来默认初始化游戏-->
 </form>
-
 <h2>地图配置:</h2>
+<div>
+    <label>
+        <input type="text" maxlength="12" placeholder="输入地型种子">
+    </label>
+    <label>
+        <input type="text" maxlength="6" placeholder="输入地图尺寸">
+    </label>
+    <label>
+        <select>
+                <option>经典</option>
+                <option>离奇</option>
+                <option>随机</option>
+                <option>沼泽</option>
+                <option>超平坦</option>
+        </select>
+    </label>
+</div>
+
+<a href="/chess2" onclick="navigate('/chess2')">
+    <button type="button" id="submitBtn">提交</button>
+</a>
 <script>
 function navigate(path) {
     history.pushState({}, "", path); // 改 URL
 }
 let playerId = 0;
-// 创建一个玩家配置区块
 function createPlayer() {
     playerId++;
-
     const div = document.createElement('div');
     div.className = 'player';
     div.id = `player-${playerId}`;
-
     div.innerHTML = `
         <button type="button" class="remove-btn" onclick="removePlayer(${playerId})">删除</button>
-        <h3>玩家 ${playerId}</h3>
-
-        <label>职业：</label>
-        <select name="job">
-            <option value="战士">战士</option>
-            <option value="法师">法师</option>
-            <option value="刺客">刺客</option>
-        </select>
-        <br><br>
-
-        <label>阵营：</label>
-        <select name="faction">
-            <option value="联盟">联盟</option>
-            <option value="部落">部落</option>
-            <option value="中立">中立</option>
-        </select>
-        <br><br>
-
-        <label>等级：</label>
+        <label>玩家：</label>
         <select name="level">
-            ${Array.from({length: 10}, (_,i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+            ${Array.from({length: 40}, (_,i) => `<option value="${i+1}">${i+1}</option>`).join('')}
         </select>
+<!--        玩家数不能重复，不能有两个玩家一 -->
+        <label>阵营：</label>
+        <select name="level2">
+            ${Array.from({length: 30}, (_,i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+        </select>
+<!--  不同的玩家可以同一个阵营，但是一个玩家只能一个阵营（目前不考虑叛变等乱七八糟的） -->
+        <label>文明：</label>
+        <select name="faction">
+            <option>中华</option>
+            <option>罗马</option>
+            <option>奥迪</option>
+        </select>
+<!--        可以有多个相同的/不同的文明，可随意选择-->
+        <label>人机：</label>
+        <select name="faction2">
+            <option>真人操作</option>
+            <option>ai控制</option>
+        </select>
+<!--        可以选择真人操控（也支持ai托管/自动化脚本），还是ai操控  -->
+<label>IP：</label>
+        <select multiple>
+        <option value="red">红色</option>
+        <option value="green">绿色</option>
+        <option value="blue">蓝色</option>
+        <option value="yellow">黄色</option>
+        </select>
+<!--  同一台电脑（同一IP）可以创建多个玩家，也可以不同电脑联机（websocket）
+还可以同一个玩家由多台电脑（IP）控制-->
+<label>初始配置：</label>
+        <input type="text" maxlength="4" placeholder="输入x坐标">
+        <input type="text" maxlength="4" placeholder="输入y坐标">
+<!--  设置出生点，文明初始配置等 -->
     `;
-
     return div;
 }
-
 // 添加玩家
 document.getElementById('addPlayer').onclick = () => {
     document.getElementById('players').appendChild(createPlayer());
 };
-
 // 删除玩家
 function removePlayer(id) {
     const div = document.getElementById(`player-${id}`);
     if (div) div.remove();
 }
-
 // 提交
 document.getElementById('submitBtn').onclick = () => {
     const playersDiv = document.querySelectorAll('.player');
     const result = [];
-
     playersDiv.forEach(p => {
         result.push({
             job: p.querySelector('select[name="job"]').value,
@@ -103,11 +121,9 @@ document.getElementById('submitBtn').onclick = () => {
             level: p.querySelector('select[name="level"]').value
         });
     });
-
     console.log("提交的玩家信息：", result);
     alert("玩家信息已打印到控制台！");
 };
 </script>
-
 </body>
 </html>
