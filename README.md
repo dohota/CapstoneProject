@@ -17,5 +17,12 @@ v2.2:
 实现了很大地图的滚动，但是仔细发现地图还是有边界的
 （不知道以后能不能像MC那样无限地图）
 缺点：现在就一个html和一个js，后期应该需要多个js+一个html
+ * 核心概念：
+ * 1. World Space (世界坐标): 单位在游戏世界里的绝对像素位置。
+ * 2. Screen Space (屏幕坐标): 最终画在 Canvas 上的位置。
+ * * 公式：
+ * ScreenX = WorldX - CameraX + ScreenCenterX
+ * WorldX  = ScreenX - ScreenCenterX + CameraX
+
 v2.3:
 

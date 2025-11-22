@@ -1,11 +1,3 @@
-/**
- * 核心概念：
- * 1. World Space (世界坐标): 单位在游戏世界里的绝对像素位置。
- * 2. Screen Space (屏幕坐标): 最终画在 Canvas 上的位置。
- * * 公式：
- * ScreenX = WorldX - CameraX + ScreenCenterX
- * WorldX  = ScreenX - ScreenCenterX + CameraX
- */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const turnText = document.getElementById('turn-text');
