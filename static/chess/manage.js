@@ -24,13 +24,14 @@ class Game {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
             this.camera.resize(window.innerWidth, window.innerHeight);
-            //this.draw();
             this.renderer.render(this, this.camera);// 强制重绘
         });
-        // 初始化Canvas
         this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        //初始化 画地图
+        this.canvas.height = window.innerHeight;// 初始化Canvas
+        this.initMap()
+        this.initUnit()
+    }
+    initMap(){
         console.time("MapGen");
         for (let q = -CONFIG.MAP_RADIUS; q <= CONFIG.MAP_RADIUS; q++) {
             let r1 = Math.max(-CONFIG.MAP_RADIUS, -q - CONFIG.MAP_RADIUS);
@@ -41,14 +42,22 @@ class Game {
             }
         }
         console.timeEnd("MapGen");//计算画地图花了多少时间，一般2-3ms
-        // 添加红方单位
-        this.units.push(new Warrior(-2, 0, 1));
-        this.units.push(new Archer(-3, -1, 1));
-        this.units.push(new Rider(-3, 1, 1));
-        // 添加蓝方单位
-        this.units.push(new Warrior(2, 0, 2));
-        this.units.push(new Archer(3, 1, 2));
-        this.units.push(new Rider(3, -1, 2));
+    }
+    initUnit(){
+        this.units.push(new Warrior(0, -7, 2));
+        this.units.push(new Warrior(-1, -3, 2));
+        this.units.push(new Warrior(-1, -4, 1));
+        // let r = HexMath.getRandomInt(1, 25);
+        // if (r <= 7){//严格相等,值 和 类型 都相等，无隐式类型转换
+        //     //for (let q = 1; q <= 3; q++){
+        //     this.units.push(new Warrior(r-15, r-10, 1));
+        //     this.units.push(new Warrior(r-15, r-7, 2));
+        //     //}
+        // }else if(r >19){
+        //     this.units.push(new Archer(r-5, r-9, 1));
+        // }else{
+        //     this.units.push(new Rider(r-13, r-11, 2));
+        // }
     }
     // 核心交互逻辑
     handleInput(hex) {
@@ -67,7 +76,7 @@ class Game {
         this.selectedUnit = unit;
         this.calculateValidMoves(unit);
     }
-    // 修改2：读取单位moveRange
+    // 修改：读取单位moveRange
     calculateValidMoves(unit) {
         this.validMoves = [];
         this.map.forEach(tile => {
@@ -101,12 +110,10 @@ class Game {
         this.turnText.textContent = this.currentPlayer === 1 ? "红方回合" : "蓝方回合";
         this.turnText.style.color = this.currentPlayer === 1 ? CONFIG.COLORS.P1 : CONFIG.COLORS.P2;
     }
-    // 游戏主循环
     loop() {
         this.renderer.render(this, this.camera);
         requestAnimationFrame(() => this.loop());
     }
 }
-// draw() {     this.renderer.render(this, this.camera);}
 const game = new Game();
-game.loop()
+game.loop() // 游戏主循环

@@ -1,26 +1,14 @@
-// 这里体现了 OOP 的精髓：继承 (Inheritance) 和 多态 (Polymorphism)。
-//
-// BaseUnit: 基础类，包含所有棋子都有的属性（坐标、血量、所属玩家）。
-//
-// Warrior: 继承自基础类，移动力普通，血厚。
-//
-// Rider: 移动力很高，但血少。
-//
-// Archer: 移动力低
 import { CONFIG } from './config.js';
-/**
- * 基础单位类
- * 所有棋子的父类
- */
+
 export class BaseUnit {
     constructor(q, r, owner) {
         this.q = q;
         this.r = r;
-        this.owner = owner; // 1 或 2
+        this.owner = owner; // 1 或 2：哪一队玩家
         // 默认属性
         this.name = "Unknown";
         this.maxHp = 100;
-        this.hp = 100;
+        this.hp = this.maxHp; //刚初始化的时候是满血，以后可能会扣血
         this.moveRange = 3;
         this.color = "#ffffff";
     }
@@ -38,36 +26,27 @@ export class BaseUnit {
         return this.hp > 0;
     }
 }
-/**
- * 兵种：战士 (步兵)
- * 特点：平衡
- */
+ // 战士移动力普通，血厚
 export class Warrior extends BaseUnit {
     constructor(q, r, owner) {
         super(q, r, owner); // 调用父类构造函数
         this.name = "战士";
-        this.hp = 120;      // 血厚
-        this.moveRange = 3; // 标准移动
+        this.hp = 120;
+        this.moveRange = 3;
         this.color = CONFIG.COLORS.UNIT_WARRIOR;
     }
 }
-/**
- * 兵种：骑兵
- * 特点：跑得快 (moveRange = 5)
- */
+//骑兵移动力很高，血少
 export class Rider extends BaseUnit {
     constructor(q, r, owner) {
         super(q, r, owner);
         this.name = "骑兵";
-        this.hp = 80;       // 血略少
-        this.moveRange = 5; // !! 跑得远
+        this.hp = 80;
+        this.moveRange = 5;
         this.color = CONFIG.COLORS.UNIT_RIDER;
     }
 }
-/**
- * 兵种：弓箭手
- * 特点：跑得慢
- */
+
 export class Archer extends BaseUnit {
     constructor(q, r, owner) {
         super(q, r, owner);

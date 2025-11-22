@@ -1,5 +1,5 @@
 import { CONFIG } from '/static/chess/config.js';
-//静态方法，无需实例化.负责所有数学计算（坐标转换、距离计算）
+//静态方法，负责所有数学计算（坐标转换、距离计算）
 export class HexMath {
     static getKey(q, r) {
         return `${q},${r}`;
@@ -25,5 +25,10 @@ export class HexMath {
     }
     static getDistance(h1, h2) {
         return (Math.abs(h1.q - h2.q) + Math.abs(h1.q + h1.r - h2.q - h2.r) + Math.abs(h1.r - h2.r)) / 2;
+    }
+    static getRandomInt(min, max) {
+        min = Math.ceil(min); // 向上取整
+        max = Math.floor(max); // 向下取整
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 }

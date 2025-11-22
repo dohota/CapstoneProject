@@ -1,7 +1,6 @@
 import { CONFIG } from '/static/chess/config.js';
 import { HexMath } from '/static/chess/math.js';
-//渲染器:负责 canvas 绘图
-//根据 unit.color 决定身体颜色，根据 unit.owner 决定描边颜色（红队/蓝队）
+
 export class Renderer {
     constructor(canvas, ctx) {
         this.canvas = canvas;
@@ -25,24 +24,9 @@ export class Renderer {
         this.ctx.lineWidth = lineWidth;
         this.ctx.stroke();
     }
-    // drawUnit(x, y, owner) {
-    //     const color = owner === 1 ? CONFIG.COLORS.P1 : CONFIG.COLORS.P2;
-    //     this.ctx.beginPath();
-    //     this.ctx.arc(x, y, CONFIG.HEX_SIZE * 0.6, 0, Math.PI * 2);
-    //     this.ctx.fillStyle = color;
-    //     this.ctx.fill();
-    //     this.ctx.lineWidth = 2;
-    //     this.ctx.strokeStyle = "#fff";
-    //     this.ctx.stroke();
-    //     // 血条
-    //     this.ctx.fillStyle = "#222";
-    //     this.ctx.fillRect(x - 15, y + 10, 30, 6);
-    //     this.ctx.fillStyle = "#2ecc71";
-    //     this.ctx.fillRect(x - 14, y + 11, 28, 4);
-    // }
     drawUnit(x, y, unit) {
-        // 1. 身体颜色：由兵种决定 (unit.color)
-        // 2. 阵营边框：由 owner 决定 (Red vs Blue)
+        // 根据 unit.color 决定身体颜色：由兵种决定
+        // 根据 unit.owner 决定描边颜色,即阵营边框，目前就是(Red vs Blue)
         const teamColor = unit.owner === 1 ? CONFIG.COLORS.P1 : CONFIG.COLORS.P2;
 
         this.ctx.beginPath();
@@ -54,8 +38,7 @@ export class Renderer {
         this.ctx.lineWidth = 4;          // 边框加粗方便分辨敌我
         this.ctx.strokeStyle = teamColor; // 阵营色
         this.ctx.stroke();
-
-        // 简单的文字显示兵种首字母 (可选)
+        // 简单的文字显示兵种首字母
         this.ctx.fillStyle = "white";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "center";
@@ -72,7 +55,7 @@ export class Renderer {
              right: this.canvas.width + padding,
              bottom: this.canvas.height + padding
         };
-        //     let renderedCount = 0;
+        let renderedCount = 0;
         // 绘制地图
         game.map.forEach(tile => {
             const worldPos = HexMath.hexToWorld(tile.q, tile.r);
@@ -80,16 +63,13 @@ export class Renderer {
             // Culling 剔除
             if (screenPos.x < viewBounds.left || screenPos.x > viewBounds.right ||
                 screenPos.y < viewBounds.top || screenPos.y > viewBounds.bottom) return;
-            //renderedCount++;
+            renderedCount++;//渲染多少个格子
             let color = CONFIG.COLORS.TILE;
             // 检查是否为有效移动范围
             if (game.validMoves.some(m => m.q === tile.q && m.r === tile.r)) color = CONFIG.COLORS.MOVE_HINT;
             this.drawHexagon(screenPos.x, screenPos.y, CONFIG.HEX_SIZE - 2, color, CONFIG.COLORS.TILE_STROKE);
-            //         const isMoveTarget = game.validMoves.some(m => m.q === tile.q && m.r === tile.r);
-    //         if (isMoveTarget) color = CONFIG.COLORS.MOVE_HINT;
-            //这两行输入上个版本的
         });
-        // 高亮-绘制选中框
+        //绘制选中框
         if (game.selectedUnit) {
             const wPos = HexMath.hexToWorld(game.selectedUnit.q, game.selectedUnit.r);
             const sPos = camera.worldToScreen(wPos.x, wPos.y);
