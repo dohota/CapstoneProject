@@ -11,22 +11,18 @@ const ctx = canvas.getContext('2d');
 const turnText = document.getElementById('turn-text');
 const debugText = document.getElementById('debug-info');
 
-// --- 配置 ---
 const HEX_SIZE = 40;       // 格子更大一点
 const MAP_RADIUS = 50;     // 这是一个巨大的地图！(直径 101 格)
 const MOVE_RANGE = 3;
-
-// --- 游戏状态 ---
+// 游戏状态
 // 摄像机位置 (代表世界坐标中心点)
 const camera = { x: 0, y: 0 };
-
 let map = new Map();
 let units = [];
 let currentPlayer = 1;
 let selectedUnit = null;
 let validMoves = [];
-
-// --- 鼠标输入状态 ---
+//鼠标输入状态
 const input = {
     isDragging: false,
     startX: 0,
@@ -36,38 +32,30 @@ const input = {
     dragThreshold: 5, // 移动超过5像素视为拖拽，否则视为点击
     hasMoved: false
 };
-
-// ==========================================
-// 核心数学：坐标转换系统
-// ==========================================
-
-// 1. 六角网格坐标 (q,r) -> 世界像素坐标 (WorldX, WorldY)
+// 坐标转换系统
+//六角网格坐标 (q,r) -> 世界像素坐标 (WorldX, WorldY)
 function hexToWorld(q, r) {
     const x = HEX_SIZE * (3/2 * q);
     const y = HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
     return { x, y };
 }
-
-// 2. 世界像素坐标 -> 屏幕渲染坐标
+//世界像素坐标 -> 屏幕渲染坐标
 function worldToScreen(wx, wy) {
     return {
         x: wx - camera.x + canvas.width / 2,
         y: wy - camera.y + canvas.height / 2
     };
 }
-
-// 3. 屏幕坐标 (鼠标) -> 六角网格坐标 (q,r)
+//屏幕坐标 (鼠标) -> 六角网格坐标 (q,r)
 function screenToHex(screenX, screenY) {
-    // 第一步：转回世界坐标
+    // 转回世界坐标
     const worldX = screenX - canvas.width / 2 + camera.x;
     const worldY = screenY - canvas.height / 2 + camera.y;
-
-    // 第二步：世界坐标转 Hex
+    //世界坐标转 Hex
     const q = (2/3 * worldX) / HEX_SIZE;
     const r = (-1/3 * worldX + Math.sqrt(3)/3 * worldY) / HEX_SIZE;
     return hexRound(q, r);
 }
-
 // 四舍五入算法
 function hexRound(q, r) {
     let s = -q - r;
@@ -81,34 +69,15 @@ function hexRound(q, r) {
     else if (rDiff > sDiff) roundR = -roundQ - roundS;
     return { q: roundQ, r: roundR };
 }
-
 function getKey(q, r) { return `${q},${r}`; }
 function getDistance(h1, h2) {
     return (Math.abs(h1.q - h2.q) + Math.abs(h1.q + h1.r - h2.q - h2.r) + Math.abs(h1.r - h2.r)) / 2;
 }
-
-// ==========================================
-// 游戏逻辑
-// ==========================================
-function init() {
-    // 1. 设置 Canvas 全屏
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // 2. 生成地图
-    generateMap();
-    spawnUnits();
-
-    // 3. 启动循环
-    requestAnimationFrame(loop);
-}
-
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     draw(); // 重绘
 }
-
 function generateMap() {
     console.time("MapGen");
     for (let q = -MAP_RADIUS; q <= MAP_RADIUS; q++) {
@@ -120,7 +89,6 @@ function generateMap() {
     }
     console.timeEnd("MapGen");
 }
-
 function spawnUnits() {
     // 在中心生成一些
     units.push({ id: 1, owner: 1, q: -2, r: 0 });
@@ -135,11 +103,9 @@ function loop() {
     draw();
     requestAnimationFrame(loop);
 }
-
 function draw() {
     // 清空屏幕
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     // --- 优化核心：视锥剔除 (Culling) ---
     // 我们需要判断一个格子是否在屏幕范围内，如果在屏幕外，就不画它。
     // 为了简单，我们给屏幕加一个 padding 缓冲
@@ -148,10 +114,8 @@ function draw() {
     const viewTop = -viewPadding;
     const viewRight = canvas.width + viewPadding;
     const viewBottom = canvas.height + viewPadding;
-
     let renderedTiles = 0;
-
-    // 1. 绘制地图
+    //绘制地图
     map.forEach(tile => {
         // 获取世界坐标
         const worldPos = hexToWorld(tile.q, tile.r);
@@ -163,27 +127,21 @@ function draw() {
             screenPos.y < viewTop || screenPos.y > viewBottom) {
             return; // 跳过绘制
         }
-
         renderedTiles++;
-
         // 确定颜色
         let color = "#34495e"; // 默认地块颜色
         let stroke = "#2c3e50";
-
         // 高亮移动范围
         const isMoveTarget = validMoves.some(m => m.q === tile.q && m.r === tile.r);
         if (isMoveTarget) {
             color = "#16a085"; // 绿色
         }
-
         drawHexagon(screenPos.x, screenPos.y, HEX_SIZE - 2, color, stroke);
-
         // 调试：显示坐标 (仅在缩放合适时显示，防止密集恐惧症)
         // ctx.fillStyle = "rgba(255,255,255,0.1)";
         // ctx.fillText(`${tile.q},${tile.r}`, screenPos.x - 10, screenPos.y);
     });
-
-    // 2. 绘制选中高亮
+    //绘制选中高亮
     if (selectedUnit) {
         const wPos = hexToWorld(selectedUnit.q, selectedUnit.r);
         const sPos = worldToScreen(wPos.x, wPos.y);
@@ -192,15 +150,12 @@ function draw() {
             drawHexagon(sPos.x, sPos.y, HEX_SIZE + 2, "rgba(241, 196, 15, 0.4)", "gold", 2);
         }
     }
-
-    // 3. 绘制单位
+    //绘制单位
     units.forEach(unit => {
         const wPos = hexToWorld(unit.q, unit.r);
         const sPos = worldToScreen(wPos.x, wPos.y);
-
         // 剔除
         if (sPos.x < viewLeft || sPos.x > viewRight || sPos.y < viewTop || sPos.y > viewBottom) return;
-
         const color = unit.owner === 1 ? "#e74c3c" : "#3498db";
         ctx.beginPath();
         ctx.arc(sPos.x, sPos.y, HEX_SIZE * 0.6, 0, Math.PI * 2);
@@ -209,7 +164,6 @@ function draw() {
         ctx.lineWidth = 2;
         ctx.strokeStyle = "#fff";
         ctx.stroke();
-
         // 血条背景
         ctx.fillStyle = "#222";
         ctx.fillRect(sPos.x - 15, sPos.y + 10, 30, 6);
@@ -217,11 +171,9 @@ function draw() {
         ctx.fillStyle = "#2ecc71";
         ctx.fillRect(sPos.x - 14, sPos.y + 11, 28, 4);
     });
-
     // 更新 UI 调试信息
     debugText.textContent = `Camera: ${Math.round(camera.x)}, ${Math.round(camera.y)} | Rendered: ${renderedTiles} tiles`;
 }
-
 function drawHexagon(x, y, size, color, strokeColor, lineWidth = 1) {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
@@ -236,11 +188,7 @@ function drawHexagon(x, y, size, color, strokeColor, lineWidth = 1) {
     ctx.lineWidth = lineWidth;
     ctx.stroke();
 }
-
-// ==========================================
 // 输入处理 (Input Handling)
-// ==========================================
-
 // 鼠标按下：开始记录
 canvas.addEventListener('mousedown', e => {
     input.isDragging = true;
@@ -251,29 +199,23 @@ canvas.addEventListener('mousedown', e => {
     input.camStartY = camera.y;
     canvas.style.cursor = 'grabbing';
 });
-
 // 鼠标移动：如果是拖拽模式，更新摄像机
 canvas.addEventListener('mousemove', e => {
     if (!input.isDragging) return;
-
     const dx = e.clientX - input.startX;
     const dy = e.clientY - input.startY;
-
     // 判断是否超过了“点击抖动”的阈值
     if (Math.abs(dx) > input.dragThreshold || Math.abs(dy) > input.dragThreshold) {
         input.hasMoved = true;
     }
-
     // 摄像机移动方向与鼠标相反（类似拖拽地图）
     camera.x = input.camStartX - dx;
     camera.y = input.camStartY - dy;
 });
-
 // 鼠标松开：判断是 拖拽结束 还是 点击事件
 canvas.addEventListener('mouseup', e => {
     input.isDragging = false;
     canvas.style.cursor = 'default';
-
     if (!input.hasMoved) {
         // 如果没怎么移动，说明是【点击】
         const hex = screenToHex(e.clientX, e.clientY);
@@ -282,16 +224,13 @@ canvas.addEventListener('mouseup', e => {
         }
     }
 });
-
 // 鼠标离开窗口
 canvas.addEventListener('mouseleave', () => {
     input.isDragging = false;
 });
-
 // 游戏点击逻辑 (与之前相同)
 function handleGameClick(hex) {
     const clickedUnit = units.find(u => u.q === hex.q && u.r === hex.r);
-
     if (clickedUnit && clickedUnit.owner === currentPlayer) {
         selectedUnit = clickedUnit;
         calculateValidMoves(clickedUnit);
@@ -323,5 +262,12 @@ function calculateValidMoves(unit) {
         }
     });
 }
-// 启动
-init();
+
+// 设置 Canvas 全屏
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+// 生成地图
+generateMap();
+spawnUnits();
+// 启动循环
+requestAnimationFrame(loop);
