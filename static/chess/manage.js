@@ -1,21 +1,21 @@
 import { CONFIG } from '/static/chess/config.js';
-import { HexMath } from '/static/chess/math.js';
+import { HexMath } from '/static/chess/maths.js';
 import { Camera } from '/static/chess/camera.js';
 import { InputSystem } from '/static/chess/input.js';
 import { Renderer } from '/static/chess/render.js';
-import { Warrior, Rider, Archer } from '/static/chess/unit.js';
+import {Warrior, Rider, Archer, BaseUnit} from '/static/chess/unit.js';
 class Game {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');//canvas画板
+        this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.turnText = document.getElementById('turn-text');//显示是哪一方的回合
-
-        this.map = new Map();
+        //显示是哪一方的回合
+        this.turnText = document.getElementById('turn-text');
         this.units = [];
         this.currentPlayer = 1;
         this.selectedUnit = null;
         this.validMoves = [];
 
+        this.map = new Map();
         this.camera = new Camera(window.innerWidth, window.innerHeight);
         this.renderer = new Renderer(this.canvas, this.ctx);
         this.input = new InputSystem(this.canvas, this.camera, (hex) => this.handleInput(hex));
@@ -44,20 +44,14 @@ class Game {
         console.timeEnd("MapGen");//计算画地图花了多少时间，一般2-3ms
     }
     initUnit(){
-        this.units.push(new Warrior(0, -7, 2));
-        this.units.push(new Warrior(-1, -3, 2));
-        this.units.push(new Warrior(-1, -4, 1));
-        // let r = HexMath.getRandomInt(1, 25);
-        // if (r <= 7){//严格相等,值 和 类型 都相等，无隐式类型转换
-        //     //for (let q = 1; q <= 3; q++){
-        //     this.units.push(new Warrior(r-15, r-10, 1));
-        //     this.units.push(new Warrior(r-15, r-7, 2));
-        //     //}
-        // }else if(r >19){
-        //     this.units.push(new Archer(r-5, r-9, 1));
-        // }else{
-        //     this.units.push(new Rider(r-13, r-11, 2));
-        // }
+        for(let i=0; i< HexMath.getRandomInt(2, 10);i++){
+            this.units.push(new BaseUnit(HexMath.getRandomInt(-100, 100), HexMath.getRandomInt(-70, 150), 1));
+            //this.units.push(new BaseUnit(HexMath.getRandomInt(-50, 50), HexMath.getRandomInt(-50, 50), 2));
+            this.units.push(new BaseUnit(1, 2, 1));
+            this.units.push(new BaseUnit(2, 1, 2));
+            //this.units.push(new Warrior(HexMath.getRandomInt(-50, 50), HexMath.getRandomInt(-50, 50), 1));
+            //this.units.push(new Warrior(0, 0, 2));
+        }
     }
     // 核心交互逻辑
     handleInput(hex) {
@@ -65,11 +59,9 @@ class Game {
         if (!this.map.has(HexMath.getKey(hex.q, hex.r))) return;
         const clickedUnit = this.units.find(u => u.q === hex.q && u.r === hex.r);
         if (clickedUnit && clickedUnit.owner === this.currentPlayer) {
-            // 选中自己人
-            this.selectUnit(clickedUnit);
+            this.selectUnit(clickedUnit);// 选中自己人
         } else if (this.selectedUnit && !clickedUnit) {
-            // 点击空地，尝试移动
-            this.tryMove(hex);
+            this.tryMove(hex);// 点击空地，尝试移动
         }
     }
     selectUnit(unit) {
@@ -116,4 +108,4 @@ class Game {
     }
 }
 const game = new Game();
-game.loop() // 游戏主循环
+game.loop()

@@ -1,5 +1,5 @@
 import { CONFIG } from '/static/chess/config.js';
-import { HexMath } from '/static/chess/math.js';
+import { HexMath } from '/static/chess/maths.js';
 export class Camera {
     constructor(width, height) {
         this.x = 0;

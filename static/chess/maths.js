@@ -27,8 +27,6 @@ export class HexMath {
         return (Math.abs(h1.q - h2.q) + Math.abs(h1.q + h1.r - h2.q - h2.r) + Math.abs(h1.r - h2.r)) / 2;
     }
     static getRandomInt(min, max) {
-        min = Math.ceil(min); // 向上取整
-        max = Math.floor(max); // 向下取整
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        return Math.floor(Math.random() * max-min+1) + min;
     }
 }

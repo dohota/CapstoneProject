@@ -1,4 +1,5 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from '/static/chess/config.js';
+import {HexMath} from "/static/chess/maths.js";
 
 export class BaseUnit {
     constructor(q, r, owner) {
@@ -6,11 +7,11 @@ export class BaseUnit {
         this.r = r;
         this.owner = owner; // 1 或 2：哪一队玩家
         // 默认属性
-        this.name = "Unknown";
-        this.maxHp = 100;
+        this.name = ["a","b","c","d","e","f","g","h","i","j"][HexMath.getRandomInt(0,9)];
+        this.maxHp = HexMath.getRandomInt(2,120);
         this.hp = this.maxHp; //刚初始化的时候是满血，以后可能会扣血
-        this.moveRange = 3;
-        this.color = "#ffffff";
+        this.moveRange = HexMath.getRandomInt(1,8);
+        this.color = [CONFIG.COLORS.UNIT_WARRIOR, CONFIG.COLORS.UNIT_RIDER, CONFIG.COLORS.UNIT_ARCHER][HexMath.getRandomInt(0,2)];
     }
     // 移动方法
     moveTo(q, r) {
@@ -56,5 +57,6 @@ export class Archer extends BaseUnit {
         this.color = CONFIG.COLORS.UNIT_ARCHER;
     }
 }
+
 //如果加一个Tank，只需要在 unit.js 里写 class Tank extends BaseUnit，设置 hp = 500, moveRange = 1，
 // 然后在 game.js 里 new Tank(...) 即可，其他代码一行都不用改！
