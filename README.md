@@ -24,5 +24,5 @@ v2.2:
  * ScreenX = WorldX - CameraX + ScreenCenterX
  * WorldX  = ScreenX - ScreenCenterX + CameraX
 
-v2.3:
+v2.3:写成了面向对象的形式，便于多文件，而且项目更加清晰
 

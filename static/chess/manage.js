@@ -1,265 +1,334 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const turnText = document.getElementById('turn-text');
-const debugText = document.getElementById('debug-info');
-
-const HEX_SIZE = 40;       // 格子更大一点
-const MAP_RADIUS = 50;     // 这是一个巨大的地图！(直径 101 格)
-const MOVE_RANGE = 3;
-// 游戏状态
-// 摄像机位置 (代表世界坐标中心点)
-const camera = { x: 0, y: 0 };
-let map = new Map();
-let units = [];
-let currentPlayer = 1;
-let selectedUnit = null;
-let validMoves = [];
-//鼠标输入状态
-const input = {
-    isDragging: false,
-    startX: 0,
-    startY: 0,
-    camStartX: 0,
-    camStartY: 0,
-    dragThreshold: 5, // 移动超过5像素视为拖拽，否则视为点击
-    hasMoved: false
+const CONFIG = {
+    HEX_SIZE: 40,
+    MAP_RADIUS: 50,
+    MOVE_RANGE: 3,
+    DRAG_THRESHOLD: 5,
+    COLORS: {
+        P1: "#e74c3c",
+        P2: "#3498db",
+        HIGHLIGHT: "rgba(241, 196, 15, 0.4)",
+        MOVE_HINT: "#16a085",
+        BG: "#222",
+        TILE: "#34495e",
+        TILE_STROKE: "#2c3e50"
+    }
 };
-// 坐标转换系统
-//六角网格坐标 (q,r) -> 世界像素坐标 (WorldX, WorldY)
-function hexToWorld(q, r) {
-    const x = HEX_SIZE * (3/2 * q);
-    const y = HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
-    return { x, y };
-}
-//世界像素坐标 -> 屏幕渲染坐标
-function worldToScreen(wx, wy) {
-    return {
-        x: wx - camera.x + canvas.width / 2,
-        y: wy - camera.y + canvas.height / 2
-    };
-}
-//屏幕坐标 (鼠标) -> 六角网格坐标 (q,r)
-function screenToHex(screenX, screenY) {
-    // 转回世界坐标
-    const worldX = screenX - canvas.width / 2 + camera.x;
-    const worldY = screenY - canvas.height / 2 + camera.y;
-    //世界坐标转 Hex
-    const q = (2/3 * worldX) / HEX_SIZE;
-    const r = (-1/3 * worldX + Math.sqrt(3)/3 * worldY) / HEX_SIZE;
-    return hexRound(q, r);
-}
-// 四舍五入算法
-function hexRound(q, r) {
-    let s = -q - r;
-    let roundQ = Math.round(q);
-    let roundR = Math.round(r);
-    let roundS = Math.round(s);
-    const qDiff = Math.abs(roundQ - q);
-    const rDiff = Math.abs(roundR - r);
-    const sDiff = Math.abs(roundS - s);
-    if (qDiff > rDiff && qDiff > sDiff) roundQ = -roundR - roundS;
-    else if (rDiff > sDiff) roundR = -roundQ - roundS;
-    return { q: roundQ, r: roundR };
-}
-function getKey(q, r) { return `${q},${r}`; }
-function getDistance(h1, h2) {
-    return (Math.abs(h1.q - h2.q) + Math.abs(h1.q + h1.r - h2.q - h2.r) + Math.abs(h1.r - h2.r)) / 2;
-}
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    draw(); // 重绘
-}
-function generateMap() {
-    console.time("MapGen");
-    for (let q = -MAP_RADIUS; q <= MAP_RADIUS; q++) {
-        let r1 = Math.max(-MAP_RADIUS, -q - MAP_RADIUS);
-        let r2 = Math.min(MAP_RADIUS, -q + MAP_RADIUS);
-        for (let r = r1; r <= r2; r++) {
-            map.set(getKey(q, r), { q, r });
-        }
+/* 静态方法，无需实例化.
+负责所有数学计算（坐标转换、距离计算）*/
+class HexMath {
+    static getKey(q, r) {
+        return `${q},${r}`;
     }
-    console.timeEnd("MapGen");
-}
-function spawnUnits() {
-    // 在中心生成一些
-    units.push({ id: 1, owner: 1, q: -2, r: 0 });
-    units.push({ id: 2, owner: 2, q: 2, r: 0 });
+    static hexToWorld(q, r) {
+        const x = CONFIG.HEX_SIZE * (3/2 * q);
+        const y = CONFIG.HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
+        return { x, y };
+    }
+    static hexRound(q, r) {
+        let s = -q - r;
+        let roundQ = Math.round(q);
+        let roundR = Math.round(r);
+        let roundS = Math.round(s);
 
-    // 在很远的地方生成一些，测试大地图移动
-    units.push({ id: 3, owner: 1, q: -10, r: 5 });
-    units.push({ id: 4, owner: 2, q: 10, r: -5 });
-}
-// 渲染循环 (Render Loop)
-function loop() {
-    draw();
-    requestAnimationFrame(loop);
-}
-function draw() {
-    // 清空屏幕
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // --- 优化核心：视锥剔除 (Culling) ---
-    // 我们需要判断一个格子是否在屏幕范围内，如果在屏幕外，就不画它。
-    // 为了简单，我们给屏幕加一个 padding 缓冲
-    const viewPadding = HEX_SIZE * 2;
-    const viewLeft = -viewPadding;
-    const viewTop = -viewPadding;
-    const viewRight = canvas.width + viewPadding;
-    const viewBottom = canvas.height + viewPadding;
-    let renderedTiles = 0;
-    //绘制地图
-    map.forEach(tile => {
-        // 获取世界坐标
-        const worldPos = hexToWorld(tile.q, tile.r);
-        // 转换为屏幕坐标
-        const screenPos = worldToScreen(worldPos.x, worldPos.y);
+        const qDiff = Math.abs(roundQ - q);
+        const rDiff = Math.abs(roundR - r);
+        const sDiff = Math.abs(roundS - s);
 
-        // !! 视锥剔除检查 !!
-        if (screenPos.x < viewLeft || screenPos.x > viewRight ||
-            screenPos.y < viewTop || screenPos.y > viewBottom) {
-            return; // 跳过绘制
-        }
-        renderedTiles++;
-        // 确定颜色
-        let color = "#34495e"; // 默认地块颜色
-        let stroke = "#2c3e50";
-        // 高亮移动范围
-        const isMoveTarget = validMoves.some(m => m.q === tile.q && m.r === tile.r);
-        if (isMoveTarget) {
-            color = "#16a085"; // 绿色
-        }
-        drawHexagon(screenPos.x, screenPos.y, HEX_SIZE - 2, color, stroke);
-        // 调试：显示坐标 (仅在缩放合适时显示，防止密集恐惧症)
-        // ctx.fillStyle = "rgba(255,255,255,0.1)";
-        // ctx.fillText(`${tile.q},${tile.r}`, screenPos.x - 10, screenPos.y);
-    });
-    //绘制选中高亮
-    if (selectedUnit) {
-        const wPos = hexToWorld(selectedUnit.q, selectedUnit.r);
-        const sPos = worldToScreen(wPos.x, wPos.y);
-        // 简单检查是否在屏幕内
-        if (sPos.x > viewLeft && sPos.x < viewRight && sPos.y > viewTop && sPos.y < viewBottom) {
-            drawHexagon(sPos.x, sPos.y, HEX_SIZE + 2, "rgba(241, 196, 15, 0.4)", "gold", 2);
-        }
+        if (qDiff > rDiff && qDiff > sDiff) roundQ = -roundR - roundS;
+        else if (rDiff > sDiff) roundR = -roundQ - roundS;
+        return { q: roundQ, r: roundR };
     }
-    //绘制单位
-    units.forEach(unit => {
-        const wPos = hexToWorld(unit.q, unit.r);
-        const sPos = worldToScreen(wPos.x, wPos.y);
-        // 剔除
-        if (sPos.x < viewLeft || sPos.x > viewRight || sPos.y < viewTop || sPos.y > viewBottom) return;
-        const color = unit.owner === 1 ? "#e74c3c" : "#3498db";
-        ctx.beginPath();
-        ctx.arc(sPos.x, sPos.y, HEX_SIZE * 0.6, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#fff";
-        ctx.stroke();
-        // 血条背景
-        ctx.fillStyle = "#222";
-        ctx.fillRect(sPos.x - 15, sPos.y + 10, 30, 6);
-        // 血量
-        ctx.fillStyle = "#2ecc71";
-        ctx.fillRect(sPos.x - 14, sPos.y + 11, 28, 4);
-    });
-    // 更新 UI 调试信息
-    debugText.textContent = `Camera: ${Math.round(camera.x)}, ${Math.round(camera.y)} | Rendered: ${renderedTiles} tiles`;
+    static getDistance(h1, h2) {
+        return (Math.abs(h1.q - h2.q) + Math.abs(h1.q + h1.r - h2.q - h2.r) + Math.abs(h1.r - h2.r)) / 2;
+    }
 }
-function drawHexagon(x, y, size, color, strokeColor, lineWidth = 1) {
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-        const angle_deg = 60 * i;
-        const angle_rad = Math.PI / 180 * angle_deg;
-        ctx.lineTo(x + size * Math.cos(angle_rad), y + size * Math.sin(angle_rad));
+class Camera {
+    constructor(width, height) {
+        this.x = 0;
+        this.y = 0;
+        this.width = width;
+        this.height = height;
     }
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = lineWidth;
-    ctx.stroke();
+    resize(w, h) {
+        this.width = w;
+        this.height = h;
+    }
+    // 世界坐标 -> 屏幕坐标
+    worldToScreen(worldX, worldY) {
+        return {
+            x: worldX - this.x + this.width / 2,
+            y: worldY - this.y + this.height / 2
+        };
+    }
+    // 屏幕坐标 -> Hex网格坐标
+    screenToHex(screenX, screenY) {
+        const worldX = screenX - this.width / 2 + this.x;
+        const worldY = screenY - this.height / 2 + this.y;
+
+        const q = (2/3 * worldX) / CONFIG.HEX_SIZE;
+        const r = (-1/3 * worldX + Math.sqrt(3)/3 * worldY) / CONFIG.HEX_SIZE;
+        return HexMath.hexRound(q, r);
+    }
+    // 移动摄像机
+    pan(dx, dy) {
+        this.x -= dx;
+        this.y -= dy;
+    }
 }
-// 输入处理 (Input Handling)
-// 鼠标按下：开始记录
-canvas.addEventListener('mousedown', e => {
-    input.isDragging = true;
-    input.hasMoved = false; // 重置移动标记
-    input.startX = e.clientX;
-    input.startY = e.clientY;
-    input.camStartX = camera.x;
-    input.camStartY = camera.y;
-    canvas.style.cursor = 'grabbing';
-});
-// 鼠标移动：如果是拖拽模式，更新摄像机
-canvas.addEventListener('mousemove', e => {
-    if (!input.isDragging) return;
-    const dx = e.clientX - input.startX;
-    const dy = e.clientY - input.startY;
-    // 判断是否超过了“点击抖动”的阈值
-    if (Math.abs(dx) > input.dragThreshold || Math.abs(dy) > input.dragThreshold) {
-        input.hasMoved = true;
+//输入系统: 处理鼠标交互，区分拖拽和点击
+class InputSystem {
+    constructor(canvas, camera, onClickCallback) {
+        this.canvas = canvas;
+        this.camera = camera;
+        this.onClick = onClickCallback;
+        this.state = {
+            isDragging: false,
+            hasMoved: false,
+            startX: 0,
+            startY: 0
+        };
+        this.bindEvents();
     }
-    // 摄像机移动方向与鼠标相反（类似拖拽地图）
-    camera.x = input.camStartX - dx;
-    camera.y = input.camStartY - dy;
-});
-// 鼠标松开：判断是 拖拽结束 还是 点击事件
-canvas.addEventListener('mouseup', e => {
-    input.isDragging = false;
-    canvas.style.cursor = 'default';
-    if (!input.hasMoved) {
-        // 如果没怎么移动，说明是【点击】
-        const hex = screenToHex(e.clientX, e.clientY);
-        if (map.has(getKey(hex.q, hex.r))) {
-            handleGameClick(hex);
+    bindEvents() {
+        this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+        this.canvas.addEventListener('mouseleave', () => this.onMouseLeave());
+    }
+    onMouseDown(e) {
+        this.state.isDragging = true;
+        this.state.hasMoved = false;
+        this.state.startX = e.clientX;
+        this.state.startY = e.clientY;
+        this.canvas.style.cursor = 'grabbing';
+    }
+    onMouseMove(e) {
+        if (!this.state.isDragging) return;
+        const dx = e.clientX - this.state.startX;
+        const dy = e.clientY - this.state.startY;
+        // 检测是否达到拖拽阈值
+        if (Math.abs(dx) > CONFIG.DRAG_THRESHOLD || Math.abs(dy) > CONFIG.DRAG_THRESHOLD) {
+            this.state.hasMoved = true;
+        }
+        // 移动摄像机
+        this.camera.pan(dx, dy);
+        // 更新起始点，避免累积误差
+        this.state.startX = e.clientX;
+        this.state.startY = e.clientY;
+    }
+    onMouseUp(e) {
+        this.state.isDragging = false;
+        this.canvas.style.cursor = 'default';
+        if (!this.state.hasMoved) {
+            // 触发点击回调
+            const hex = this.camera.screenToHex(e.clientX, e.clientY);
+            this.onClick(hex);
         }
     }
-});
-// 鼠标离开窗口
-canvas.addEventListener('mouseleave', () => {
-    input.isDragging = false;
-});
-// 游戏点击逻辑 (与之前相同)
-function handleGameClick(hex) {
-    const clickedUnit = units.find(u => u.q === hex.q && u.r === hex.r);
-    if (clickedUnit && clickedUnit.owner === currentPlayer) {
-        selectedUnit = clickedUnit;
-        calculateValidMoves(clickedUnit);
-    } else if (selectedUnit && !clickedUnit) {
-        const isValid = validMoves.some(m => m.q === hex.q && m.r === hex.r);
+    onMouseLeave() {
+        this.state.isDragging = false;
+    }
+}
+//渲染器:负责 canvas 绘图
+class Renderer {
+    constructor(canvas, ctx) {
+        this.canvas = canvas;
+        this.ctx = ctx;
+        this.debugInfo = document.getElementById('debug-info');
+    }
+    clear() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    drawHexagon(x, y, size, color, strokeColor, lineWidth = 1) {
+        this.ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle_deg = 60 * i;
+            const angle_rad = Math.PI / 180 * angle_deg;
+            this.ctx.lineTo(x + size * Math.cos(angle_rad), y + size * Math.sin(angle_rad));
+        }
+        this.ctx.closePath();
+        this.ctx.fillStyle = color;
+        this.ctx.fill();
+        this.ctx.strokeStyle = strokeColor;
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.stroke();
+    }
+    drawUnit(x, y, owner) {
+        const color = owner === 1 ? CONFIG.COLORS.P1 : CONFIG.COLORS.P2;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, CONFIG.HEX_SIZE * 0.6, 0, Math.PI * 2);
+        this.ctx.fillStyle = color;
+        this.ctx.fill();
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = "#fff";
+        this.ctx.stroke();
+        // 血条
+        this.ctx.fillStyle = "#222";
+        this.ctx.fillRect(x - 15, y + 10, 30, 6);
+        this.ctx.fillStyle = "#2ecc71";
+        this.ctx.fillRect(x - 14, y + 11, 28, 4);
+    }
+    render(game, camera) {
+        this.clear();
+        // 视锥剔除边界
+        const padding = CONFIG.HEX_SIZE * 2;
+        const viewBounds = {
+            left: -padding,
+            top: -padding,
+            right: this.canvas.width + padding,
+            bottom: this.canvas.height + padding
+        };
+        let renderedCount = 0;
+        // 绘制地图
+        game.map.forEach(tile => {
+            const worldPos = HexMath.hexToWorld(tile.q, tile.r);
+            const screenPos = camera.worldToScreen(worldPos.x, worldPos.y);
+            // Culling 剔除
+            if (screenPos.x < viewBounds.left || screenPos.x > viewBounds.right ||
+                screenPos.y < viewBounds.top || screenPos.y > viewBounds.bottom) {
+                return;
+            }
+            renderedCount++;
+            let color = CONFIG.COLORS.TILE;
+            // 检查是否为有效移动范围
+            const isMoveTarget = game.validMoves.some(m => m.q === tile.q && m.r === tile.r);
+            if (isMoveTarget) color = CONFIG.COLORS.MOVE_HINT;
+            this.drawHexagon(screenPos.x, screenPos.y, CONFIG.HEX_SIZE - 2, color, CONFIG.COLORS.TILE_STROKE);
+        });
+        // 绘制选中框
+        if (game.selectedUnit) {
+            const wPos = HexMath.hexToWorld(game.selectedUnit.q, game.selectedUnit.r);
+            const sPos = camera.worldToScreen(wPos.x, wPos.y);
+            // 简单检查是否在屏幕内
+            if (sPos.x > viewBounds.left && sPos.x < viewBounds.right) {
+                this.drawHexagon(sPos.x, sPos.y, CONFIG.HEX_SIZE + 2, CONFIG.COLORS.HIGHLIGHT, "gold", 2);
+            }
+        }
+        // 绘制单位
+        game.units.forEach(unit => {
+            const wPos = HexMath.hexToWorld(unit.q, unit.r);
+            const sPos = camera.worldToScreen(wPos.x, wPos.y);
+            if (sPos.x < viewBounds.left || sPos.x > viewBounds.right ||
+                sPos.y < viewBounds.top || sPos.y > viewBounds.bottom) return;
+            this.drawUnit(sPos.x, sPos.y, unit.owner);
+        });
+        // 更新 UI
+        this.debugInfo.textContent = `Camera: ${Math.round(camera.x)}, ${Math.round(camera.y)} | Tiles: ${renderedCount}`;
+    }
+}
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.turnText = document.getElementById('turn-text');
+        // 游戏数据
+        this.map = new Map();
+        this.units = [];
+        this.currentPlayer = 1;
+        this.selectedUnit = null;
+        this.validMoves = [];
+        // 核心模块
+        this.camera = new Camera(window.innerWidth, window.innerHeight);
+        this.renderer = new Renderer(this.canvas, this.ctx);
+        this.input = new InputSystem(this.canvas, this.camera, (hex) => this.handleInput(hex));
+        // 窗口调整事件
+        window.addEventListener('resize', () => {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.camera.resize(window.innerWidth, window.innerHeight);
+            this.draw(); // 强制重绘
+        });
+        // 初始化
+        this.initCanvas();
+        this.generateMap();
+        this.spawnUnits();
+        // 启动循环
+        this.loop();
+    }
+    initCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+    generateMap() {
+        console.time("MapGen");
+        for (let q = -CONFIG.MAP_RADIUS; q <= CONFIG.MAP_RADIUS; q++) {
+            let r1 = Math.max(-CONFIG.MAP_RADIUS, -q - CONFIG.MAP_RADIUS);
+            let r2 = Math.min(CONFIG.MAP_RADIUS, -q + CONFIG.MAP_RADIUS);
+            for (let r = r1; r <= r2; r++) {
+                const key = HexMath.getKey(q, r);
+                this.map.set(key, { q, r });
+            }
+        }
+        console.timeEnd("MapGen");
+    }
+    spawnUnits() {
+        // 模拟单位数据结构
+        const createUnit = (id, owner, q, r) => ({ id, owner, q, r, hp: 100 });
+        this.units.push(createUnit(1, 1, -2, 0));
+        this.units.push(createUnit(2, 2, 2, 0));
+        this.units.push(createUnit(3, 1, -10, 5));
+        this.units.push(createUnit(4, 2, 10, -5));
+    }
+    // 核心交互逻辑
+    handleInput(hex) {
+        // 检查地图边界
+        if (!this.map.has(HexMath.getKey(hex.q, hex.r))) return;
+        const clickedUnit = this.units.find(u => u.q === hex.q && u.r === hex.r);
+        if (clickedUnit && clickedUnit.owner === this.currentPlayer) {
+            // 选中自己人
+            this.selectUnit(clickedUnit);
+        } else if (this.selectedUnit && !clickedUnit) {
+            // 点击空地，尝试移动
+            this.tryMove(hex);
+        }
+    }
+    selectUnit(unit) {
+        this.selectedUnit = unit;
+        this.calculateValidMoves(unit);
+    }
+    calculateValidMoves(unit) {
+        this.validMoves = [];
+        this.map.forEach(tile => {
+            const dist = HexMath.getDistance(unit, tile);
+            if (dist <= CONFIG.MOVE_RANGE && dist > 0) {
+                const isOccupied = this.units.some(u => u.q === tile.q && u.r === tile.r);
+                if (!isOccupied) {
+                    this.validMoves.push(tile);
+                }
+            }
+        });
+    }
+    tryMove(targetHex) {
+        const isValid = this.validMoves.some(m => m.q === targetHex.q && m.r === targetHex.r);
         if (isValid) {
-            // 移动单位
-            selectedUnit.q = hex.q;
-            selectedUnit.r = hex.r;
-            selectedUnit = null;
-            validMoves = [];
-            // 换人
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-            turnText.textContent = currentPlayer === 1 ? "红方回合" : "蓝方回合";
-            turnText.style.color = currentPlayer === 1 ? "#e74c3c" : "#3498db";
+            // 执行移动
+            this.selectedUnit.q = targetHex.q;
+            this.selectedUnit.r = targetHex.r;
+            // 清理状态
+            this.selectedUnit = null;
+            this.validMoves = [];
+            // 切换回合
+            this.switchTurn();
         } else {
-            selectedUnit = null;
-            validMoves = [];
+            // 点击非法区域，取消选中
+            this.selectedUnit = null;
+            this.validMoves = [];
         }
     }
+    switchTurn() {
+        this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+        this.turnText.textContent = this.currentPlayer === 1 ? "红方回合" : "蓝方回合";
+        this.turnText.style.color = this.currentPlayer === 1 ? CONFIG.COLORS.P1 : CONFIG.COLORS.P2;
+    }
+    // 游戏主循环
+    loop() {
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+    }
+    draw() {
+        this.renderer.render(this, this.camera);
+    }
 }
-function calculateValidMoves(unit) {
-    validMoves = [];
-    map.forEach(tile => {
-        const dist = getDistance(unit, tile);
-        if (dist <= MOVE_RANGE && dist > 0) {
-            const isOccupied = units.some(u => u.q === tile.q && u.r === tile.r);
-            if (!isOccupied) validMoves.push(tile);
-        }
-    });
-}
-
-// 设置 Canvas 全屏
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-// 生成地图
-generateMap();
-spawnUnits();
-// 启动循环
-requestAnimationFrame(loop);
+// 启动游戏
+const game = new Game();
