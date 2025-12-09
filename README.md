@@ -14,7 +14,10 @@ pycharm右侧点击数据库就可以查看数据库内容了，目前就一个�
  * Screen Space (屏幕坐标): 最终画在 Canvas 上的位置。
  * ScreenX = WorldX - CameraX + ScreenCenterX
  * WorldX  = ScreenX - ScreenCenterX + CameraX
-v2.7:每次进入终端请输入：source venv/bin/activate （激活虚拟环境）
+
+每次进入终端请输入：source venv/bin/activate （激活虚拟环境）
+这些操作都要cd CapstoneProject: 运行程序：python main.py。终止程序：在终端里control+c。git提交代码
+v2.7:
 两周没写这个代码，换了个macbook，vscode代替了pycharm，现在有点不习惯
 该版本主要调整一下之前的问题，使得代码更加美观
 
