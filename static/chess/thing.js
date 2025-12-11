@@ -40,6 +40,8 @@ export class GameObject {
             Object.defineProperty(this, name, { value: fn.bind(this), enumerable: false }); 
         } 
     }
+    //_applyMethods = “类里写的固有方法”，只能属于自己
+    //_applyMixins = “插件/模块”，可以被不同 unit 挂载复用
     moveTo(q, r) {// 移动
         this.q = q;
         this.r = r;

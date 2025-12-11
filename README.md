@@ -14,15 +14,15 @@ pycharm右侧点击数据库就可以查看数据库内容了，目前就一个�
  * Screen Space (屏幕坐标): 最终画在 Canvas 上的位置。
  * ScreenX = WorldX - CameraX + ScreenCenterX
  * WorldX  = ScreenX - ScreenCenterX + CameraX
-
 每次进入终端请输入：source venv/bin/activate （激活虚拟环境）
 这些操作都要cd CapstoneProject: 运行程序：python main.py。终止程序：在终端里control+c。git提交代码
-v2.8:
-实现了从外部加载常量（类似json），然后形成一个类------暂时没啥bug
 
+v2.8:
+实现了从外部加载常量（类似json），然后形成一个类
 实现滚轮滚动放大和缩小地图
-充实游戏玩法
 实现多种3D地形
+
+
 模仿 文明6，各种战棋，维多利亚3
    
 单人模式：只有一个玩家生存发展，对付电脑---类似矮人要塞/rimworld，模拟经营

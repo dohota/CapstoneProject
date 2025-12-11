@@ -18,6 +18,8 @@ export class InputSystem {
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
         this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
         this.canvas.addEventListener('mouseleave', () => this.onMouseLeave());
+        // 滚轮监听: passive: false 是必须的，为了能调用 preventDefault
+        this.canvas.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
     }
     onMouseDown(e) {
         this.state.isDragging = true;
@@ -26,6 +28,7 @@ export class InputSystem {
         this.state.startY = e.clientY;
         this.canvas.style.cursor = 'grabbing';
     }
+    // 注意：onMouseMove 里 camera.pan 的调用不需要改，因为我在 camera.pan 内部除以了 zoom
     onMouseMove(e) {
         if (!this.state.isDragging) return;
         const dx = e.clientX - this.state.startX;
@@ -51,5 +54,9 @@ export class InputSystem {
     }
     onMouseLeave() {
         this.state.isDragging = false;
+    }
+    onWheel(e) {//滚轮处理
+        e.preventDefault(); // 阻止网页本身滚动
+        this.camera.handleZoom(e.deltaY, e.clientX, e.clientY);
     }
 }
