@@ -3,7 +3,7 @@ import { HexMath } from '/static/chess/maths.js';
 import { Camera } from '/static/chess/camera.js';
 import { InputSystem } from '/static/chess/input.js';
 import { Renderer } from '/static/chess/render.js';
-import {Warrior, Rider, Archer, BaseUnit} from '/static/chess/unit.js';
+import {GameObject} from '/static/chess/thing.js';
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -19,8 +19,7 @@ class Game {
         this.camera = new Camera(window.innerWidth, window.innerHeight);
         this.renderer = new Renderer(this.canvas, this.ctx);
         this.input = new InputSystem(this.canvas, this.camera, (hex) => this.handleInput(hex));
-        // 窗口调整事件
-        window.addEventListener('resize', () => {
+        window.addEventListener('resize', () => {// 窗口调整事件
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
             this.camera.resize(window.innerWidth, window.innerHeight);
@@ -44,13 +43,10 @@ class Game {
         console.timeEnd("MapGen");//计算画地图花了多少时间，一般2-3ms
     }
     initUnit(){
-        for(let i=0; i< HexMath.getRandomInt(2, 10);i++){
-            this.units.push(new BaseUnit(HexMath.getRandomInt(-100, 100), HexMath.getRandomInt(-70, 150), 1));
-            //this.units.push(new BaseUnit(HexMath.getRandomInt(-50, 50), HexMath.getRandomInt(-50, 50), 2));
-            this.units.push(new BaseUnit(1, 2, 1));
-            this.units.push(new BaseUnit(2, 1, 2));
-            //this.units.push(new Warrior(HexMath.getRandomInt(-50, 50), HexMath.getRandomInt(-50, 50), 1));
-            //this.units.push(new Warrior(0, 0, 2));
+        for(let i=0; i< 2;i++){
+            this.units.push(new GameObject(HexMath.getRandomInt(-100, 100), HexMath.getRandomInt(-70, 150), 1,"villager"));
+            this.units.push(new GameObject(1, 2, 1,"king"));
+            this.units.push(new GameObject(2, 1, 2,"tank"));
         }
     }
     // 核心交互逻辑
