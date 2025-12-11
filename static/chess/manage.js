@@ -43,10 +43,14 @@ class Game {
         console.timeEnd("MapGen");//计算画地图花了多少时间，一般2-3ms
     }
     initUnit(){
-        for(let i=0; i< 2;i++){
+        for(let i=0; i< 1;i++){
             this.units.push(new GameObject(HexMath.getRandomInt(-100, 100), HexMath.getRandomInt(-70, 150), 1,"villager"));
             this.units.push(new GameObject(1, 2, 1,"king"));
             this.units.push(new GameObject(2, 1, 2,"tank"));
+            this.units.push(new GameObject(3, 4, 2,"tank"));
+            this.units.push(new GameObject(4, 4, 1,"warrior"));
+            this.units.push(new GameObject(3, 3, 1,"defender"));
+            this.units.push(new GameObject(3, 5, 1,"rider"));
         }
     }
     // 核心交互逻辑
@@ -55,22 +59,25 @@ class Game {
         if (!this.map.has(HexMath.getKey(hex.q, hex.r))) return;
         const clickedUnit = this.units.find(u => u.q === hex.q && u.r === hex.r);
         if (clickedUnit && clickedUnit.owner === this.currentPlayer) {
-            this.selectUnit(clickedUnit);// 选中自己人
+            //this.selectUnit(clickedUnit);
+            this.selectedUnit = clickedUnit;// 选中自己人
+            this.calculateValidMoves(clickedUnit);
         } else if (this.selectedUnit && !clickedUnit) {
             this.tryMove(hex);// 点击空地，尝试移动
         }
     }
-    selectUnit(unit) {
-        this.selectedUnit = unit;
-        this.calculateValidMoves(unit);
-    }
-    // 修改：读取单位moveRange
+    // selectUnit(unit) {
+    //     this.selectedUnit = unit;
+    //     this.calculateValidMoves(unit);
+    // }
+
+    // 读取单位move
     calculateValidMoves(unit) {
         this.validMoves = [];
         this.map.forEach(tile => {
             const dist = HexMath.getDistance(unit, tile);
-            // 关键修改：这里不再用全局 CONFIG.MOVE_RANGE，而是用 unit.moveRange
-            if (dist <= unit.moveRange && dist > 0) {
+            //这里不再用全局 CONFIG.MOVE_RANGE，而是用 unit.move
+            if (dist <= unit.move && dist > 0) {
                 const isOccupied = this.units.some(u => u.q === tile.q && u.r === tile.r);
                 if (!isOccupied) this.validMoves.push(tile);
             }

@@ -40,7 +40,7 @@ export const UNIT = {
         fields: {
             name: { type: "string", default: "护" },
             maxhp: { type: "number", default: 200 },
-            move: { type: "number", default: 2 },
+            move: { type: "number", default: 1 },
             color: { type: "string", default: "#4e464dd3"}
         },
     },
@@ -48,8 +48,8 @@ export const UNIT = {
         fields: {
             name: { type: "string", default: "王" },
             maxhp: { type: "number", default: 5 },
-            move: { type: "number", default: 2 },
-            color: { type: "string", default: "#FFFF00"}
+            move: { type: "number", default: 1 },
+            color: { type: "string", default: "#a9a90bff"}
         },
     }
 };

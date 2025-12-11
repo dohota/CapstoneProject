@@ -50,14 +50,13 @@ export class Renderer {
         // 视锥剔除边界
         const padding = CONFIG.HEX_SIZE * 2;
         const viewBounds = {
-             left: -padding,
-             top: -padding,
-             right: this.canvas.width + padding,
-             bottom: this.canvas.height + padding
+            left: -padding,
+            top: -padding,
+            right: this.canvas.width + padding,
+            bottom: this.canvas.height + padding
         };
         let renderedCount = 0;
-        // 绘制地图
-        game.map.forEach(tile => {
+        game.map.forEach(tile => {// 绘制地图
             const worldPos = HexMath.hexToWorld(tile.q, tile.r);
             const screenPos = camera.worldToScreen(worldPos.x, worldPos.y);
             // Culling 剔除
@@ -69,27 +68,23 @@ export class Renderer {
             if (game.validMoves.some(m => m.q === tile.q && m.r === tile.r)) color = CONFIG.COLORS.MOVE_HINT;
             this.drawHexagon(screenPos.x, screenPos.y, CONFIG.HEX_SIZE - 2, color, CONFIG.COLORS.TILE_STROKE);
         });
-        //绘制选中框
-        if (game.selectedUnit) {
+        if (game.selectedUnit) {//绘制选中框
             const wPos = HexMath.hexToWorld(game.selectedUnit.q, game.selectedUnit.r);
             const sPos = camera.worldToScreen(wPos.x, wPos.y);
-            // 简单检查是否在屏幕内
+            // 检查是否在屏幕内
             if (sPos.x > viewBounds.left && sPos.x < viewBounds.right) {
                 this.drawHexagon(sPos.x, sPos.y, CONFIG.HEX_SIZE + 2, CONFIG.COLORS.HIGHLIGHT, "gold", 2);
             }
         }
-        //绘制单位
-        game.units.forEach(unit => {
+        game.units.forEach(unit => {//绘制单位
             const wPos = HexMath.hexToWorld(unit.q, unit.r);
             const sPos = camera.worldToScreen(wPos.x, wPos.y);
             // 简单的屏幕外剔除
             if (sPos.x < viewBounds.left || sPos.x > viewBounds.right ||
                 sPos.y < viewBounds.top || sPos.y > viewBounds.bottom) return;
-            // 传入整个 unit 对象
             this.drawUnit(sPos.x, sPos.y, unit);
         });
-        // 更新 UI
-        if(this.debugInfo) {
+        if(this.debugInfo) {// 更新 UI
             this.debugInfo.textContent = `Camera: ${Math.round(camera.x)}, ${Math.round(camera.y)}`;
         }
     }
