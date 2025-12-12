@@ -88,7 +88,12 @@ async function addRow() {
         method: "POST",
         headers: { "Content-Type": "application/json" }, // 请求头，告诉服务器请求体是 JSON 格式
         body: JSON.stringify({ name, age }) // 将 JavaScript 对象转换为 JSON 字符串并发送
-    });
+    })
+    // .then(res=>res.json())
+    // .then(data =>{
+    //     document.getElementById("result").innerText = data.msg;
+    // });
+    ;
     loadData();
 }
 
@@ -123,7 +128,7 @@ async function saveRow(btn) {
         method: "PUT",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ name, age })
-    });
+    })
     loadData();
 }
 

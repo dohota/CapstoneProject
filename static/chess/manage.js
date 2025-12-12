@@ -40,7 +40,7 @@ class Game {
                 this.map.set(key, { q, r });
             }
         }
-        console.timeEnd("MapGen");//计算画地图花了多少时间，一般2-3ms
+        console.timeEnd("MapGen");//计算画地图时间.一般2-3ms
     }
     initUnit(){
         for(let i=0; i< 1;i++){

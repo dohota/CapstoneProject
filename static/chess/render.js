@@ -23,6 +23,12 @@ export class Renderer {
         this.ctx.strokeStyle = strokeColor;
         this.ctx.lineWidth = lineWidth;
         this.ctx.stroke();
+        // if (zoom > 0.8) { // 如果太小了就不显示字了，省得糊成一团
+        //     this.ctx.fillStyle = "black";
+        //     this.ctx.font = `bold ${8 * zoom}px Arial`;
+        //     this.h = 100;
+        //     this.ctx.fillText(`${x} - ${y} - ${h}`, x, y);
+        // }
     }
     drawUnit(x, y, unit,zoom) {
         // 根据 unit.color 决定身体颜色：由兵种决定
@@ -37,7 +43,7 @@ export class Renderer {
         this.ctx.lineWidth = 4 * zoom;          // 边框加粗方便分辨敌我.边框也随比例缩放一点，不然太粗/太细
         this.ctx.strokeStyle = teamColor; // 阵营色
         this.ctx.stroke(); 
-        if (zoom > 0.4) { // 如果太小了就不显示字了，省得糊成一团
+        if (zoom > 0.6) { // 如果太小了就不显示字了，省得糊成一团
             this.ctx.fillStyle = "white";
             this.ctx.font = `bold ${14 * zoom}px Arial`;
             this.ctx.textAlign = "center";

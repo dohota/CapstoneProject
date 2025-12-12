@@ -36,15 +36,7 @@ def read_index():
     return FileResponse("static/personal.html")
 
 
-@app.get("/intro/{user_id}")
-def read_index():
-    d1 = Database()
-    data = d1.search_all()
-    return {"data": data}
-    # FastAPI 会自动将 列表、字典等 转换为 JSON 格式
-
-
-@app.post("/intro")
+@app.post("intro/${id}")
 def create_index(name: str, age: int):
     d2 = Database()
     # 调用 create_field 插入新数据
