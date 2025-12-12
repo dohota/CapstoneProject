@@ -3,7 +3,7 @@ import { HexMath } from '/static/chess/maths.js';
 import { Camera } from '/static/chess/camera.js';
 import { InputSystem } from '/static/chess/input.js';
 import { Renderer } from '/static/chess/render.js';
-import {GameObject} from '/static/chess/thing.js';
+import { GameObject } from '/static/chess/thing.js';
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');

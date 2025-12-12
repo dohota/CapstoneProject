@@ -39,7 +39,7 @@ export class Renderer {
         this.ctx.stroke(); 
         if (currentZoom > 0.6) { // 如果太小了就不显示字了，省得糊成一团
             this.ctx.fillStyle = "white";
-            this.ctx.font = `bold ${14 * currentZoom}px Arial`;
+            this.ctx.font = `bold ${14 * zoom}px Arial`;
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
             this.ctx.fillText(unit.name[0], x, y);// 取名字的第一个字
@@ -47,6 +47,7 @@ export class Renderer {
     }
     render(game, camera) {
         this.clear();
+        console.log(camera.zoom);
         // 视锥剔除边界
         // Culling 边界需要考虑缩放后的 HEX 大小
         // 实际上因为 worldToScreen 已经处理了 zoom，这里的 padding 用 constant 即可，

@@ -8,8 +8,8 @@ export class Camera {
         this.height = height;
         //缩放属性
         this.zoom = 1.0; 
-        this.minZoom = 0.3; // 最远看多远 (缩小)
-        this.maxZoom = 2.0; // 最近看多近 (放大)
+        this.minZoom = 0.1; // 最远看多远 (缩小)
+        this.maxZoom = 3.0; // 最近看多近 (放大)
     }
     resize(w, h) {
         this.width = w;
@@ -38,22 +38,81 @@ export class Camera {
         this.y -= dy / this.zoom;
     }
     // --- 新增：处理缩放 ---
+    // handleZoom(delta, mouseX, mouseY) {
+    //     console.log(`[Zoom] 滚轮输入 delta: ${delta}, 当前 Zoom: ${this.zoom}`);
+    //     // 1. 计算缩放因子 (Scale Factor)
+    //     // 滚轮向下(delta > 0) -> 变小 (0.9); 滚轮向上(delta < 0) -> 变大 (1.1)
+    //     // Math.sign(delta) 只有 1, -1 或 0。
+    //     // 如果是普通鼠标，delta 通常是 100/-100；如果是触摸板，可能是 1/-1。
+    //     // 这里做一个归一化处理，防止某些鼠标滚得太快。
+    //     const direction = Math.sign(delta); // 1 (缩小) 或 -1 (放大)
+    //     if (direction === 0) return;
+
+    //     const factor = 0.1; // 每次滚动的缩放比例 (10%)
+    //     // 如果是缩小 (direction > 0)，我们乘以 (1 - factor) = 0.9
+    //     // 如果是放大 (direction < 0)，我们乘以 (1 + factor) = 1.1
+    //     // 注意 deltaY > 0 是滚轮向下（通常意图是缩小）
+        
+    //     let scaleChange = 1;
+    //     if (delta > 0) {
+    //         scaleChange = 1 - factor; // 0.9
+    //     } else {
+    //         scaleChange = 1 + factor; // 1.1
+    //     }
+
+    //     const newZoom = this.zoom * scaleChange;
+
+    //     // 2. 限制缩放范围
+    //     const clampedZoom = Math.min(Math.max(newZoom, this.minZoom), this.maxZoom);
+        
+    //     console.log(`[Zoom] 计算后 newZoom: ${newZoom}`);
+
+    //     // 3. 计算以鼠标为中心的缩放
+    //     // 核心原理：鼠标在世界坐标中的位置，在缩放前后应该保持不变
+        
+    //     // 缩放前：鼠标在世界的位置
+    //     const worldMouseX = (mouseX - this.width / 2) / this.zoom + this.x;
+    //     const worldMouseY = (mouseY - this.height / 2) / this.zoom + this.y;
+
+    //     // 应用新缩放
+    //     this.zoom = clampedZoom;
+
+    //     // 缩放后：反推摄像机应该在哪里，才能让鼠标对准刚才那个世界坐标
+    //     this.x = worldMouseX - (mouseX - this.width / 2) / this.zoom;
+    //     this.y = worldMouseY - (mouseY - this.height / 2) / this.zoom;
+    // }
+    // --- 调试版 handleZoom ---
     handleZoom(delta, mouseX, mouseY) {
-        const zoomSensitivity = 0.001; // 缩放灵敏度
-        const newZoom = this.zoom - delta * zoomSensitivity;
+        // 1. 打印原始输入
+        console.log(`[Zoom] 滚轮输入 delta: ${delta}, 当前 Zoom: ${this.zoom}`);
 
-        // 限制缩放范围
-        const clampedZoom = Math.min(Math.max(newZoom, this.minZoom), this.maxZoom);
+        // 2. 确定方向
+        // delta > 0 是向下滚（缩小），delta < 0 是向上滚（放大）
+        const direction = delta > 0 ? -1 : 1; 
+        
+        // 3. 计算倍率
+        const factor = 0.1; 
+        let scaleChange = 1 + (direction * factor); // 1.1 或 0.9
 
-        if (clampedZoom === this.zoom) return; // 没变化则退出
-        // --- 关键算法：向鼠标位置缩放 ---
-        // 1. 计算鼠标当前指向的世界坐标 (缩放前)
+        // 4. 计算预期的新 Zoom
+        let newZoom = this.zoom * scaleChange;
+        
+        // 5. 限制范围
+        newZoom = Math.max(this.minZoom, Math.min(newZoom, this.maxZoom));
+        
+        console.log(`[Zoom] 计算后 newZoom: ${newZoom}`);
+
+        if (newZoom === this.zoom) {
+            console.warn("[Zoom] 缩放被卡住了！可能是达到了最大/最小限制。");
+            return;
+        }
+
+        // 6. 执行缩放位移计算
         const worldMouseX = (mouseX - this.width / 2) / this.zoom + this.x;
         const worldMouseY = (mouseY - this.height / 2) / this.zoom + this.y;
-        // 2. 应用新的缩放
-        this.zoom = clampedZoom;
-        // 3. 计算新的摄像机位置，使得鼠标指向的世界坐标保持不变
-        // newCam = WorldMouse - (ScreenMouse - ScreenCenter) / NewZoom
+
+        this.zoom = newZoom;
+
         this.x = worldMouseX - (mouseX - this.width / 2) / this.zoom;
         this.y = worldMouseY - (mouseY - this.height / 2) / this.zoom;
     }
