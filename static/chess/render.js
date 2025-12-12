@@ -29,15 +29,15 @@ export class Renderer {
         // 根据 unit.owner 决定描边颜色,即阵营边框，目前就是(Red vs Blue)
         const teamColor = unit.owner === 1 ? CONFIG.COLORS.P1 : CONFIG.COLORS.P2;
         this.ctx.beginPath();
-        this.ctx.arc(x, y, CONFIG.HEX_SIZE * 0.6 * currentZoom, 0, Math.PI * 2);//单位大小随 Zoom 变化
+        this.ctx.arc(x, y, CONFIG.HEX_SIZE * 0.6 * zoom, 0, Math.PI * 2);//单位大小随 Zoom 变化
 
         this.ctx.fillStyle = unit.color; // 兵种色
         this.ctx.fill();
 
-        this.ctx.lineWidth = 4 * currentZoom;          // 边框加粗方便分辨敌我.边框也随比例缩放一点，不然太粗/太细
+        this.ctx.lineWidth = 4 * zoom;          // 边框加粗方便分辨敌我.边框也随比例缩放一点，不然太粗/太细
         this.ctx.strokeStyle = teamColor; // 阵营色
         this.ctx.stroke(); 
-        if (currentZoom > 0.6) { // 如果太小了就不显示字了，省得糊成一团
+        if (zoom > 0.6) { // 如果太小了就不显示字了，省得糊成一团
             this.ctx.fillStyle = "white";
             this.ctx.font = `bold ${14 * zoom}px Arial`;
             this.ctx.textAlign = "center";
@@ -47,7 +47,7 @@ export class Renderer {
     }
     render(game, camera) {
         this.clear();
-        console.log(camera.zoom);
+        //console.log(camera.zoom);
         // 视锥剔除边界
         // Culling 边界需要考虑缩放后的 HEX 大小
         // 实际上因为 worldToScreen 已经处理了 zoom，这里的 padding 用 constant 即可，
