@@ -1,10 +1,11 @@
 import { CONFIG } from '/static/chess/config.js';
 //输入系统: 处理鼠标交互，区分拖拽和点击
 export class InputSystem {
-    constructor(canvas, camera, onClickCallback) {
+    constructor(canvas, camera, onClickCallback, onKeyCallback) {
         this.canvas = canvas;
         this.camera = camera;
         this.onClick = onClickCallback;
+        this.onKey = onKeyCallback;
         this.state = {
             isDragging: false,
             hasMoved: false,
@@ -20,6 +21,8 @@ export class InputSystem {
         this.canvas.addEventListener('mouseleave', () => this.onMouseLeave());
         // 滚轮监听: passive: false 是必须的，为了能调用 preventDefault
         this.canvas.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
+        // 键盘监听绑定在Window上
+        window.addEventListener('keydown', (e) => this.onKeyDown(e));
     }
     onMouseDown(e) {
         this.state.isDragging = true;
@@ -58,5 +61,10 @@ export class InputSystem {
     onWheel(e) {//滚轮处理
         e.preventDefault(); // 阻止网页本身滚动
         this.camera.handleZoom(e.deltaY, e.clientX, e.clientY);
+    }
+    onKeyDown(e) {
+        if (e.key === 'p' || e.key === 'P') {
+            if (this.onKey) this.onKey();
+        }
     }
 }

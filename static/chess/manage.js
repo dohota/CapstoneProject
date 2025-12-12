@@ -18,7 +18,7 @@ class Game {
         this.map = new Map();
         this.camera = new Camera(window.innerWidth, window.innerHeight);
         this.renderer = new Renderer(this.canvas, this.ctx);
-        this.input = new InputSystem(this.canvas, this.camera, (hex) => this.handleInput(hex));
+        this.input = new InputSystem(this.canvas, this.camera, (hex) => this.handleInput(hex), toggleUI);
         window.addEventListener('resize', () => {// 窗口调整事件
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
@@ -109,6 +109,11 @@ class Game {
         this.renderer.render(this, this.camera);
         requestAnimationFrame(() => this.loop());
     }
+    toggleUI() {
+        const ui = document.getElementById("ui-layer");
+        ui.style.display = (ui.style.display === "none") ? "block" : "none";
+    }
+
 }
 const game = new Game();
 game.loop()

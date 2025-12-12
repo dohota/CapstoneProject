@@ -37,7 +37,7 @@ export class Renderer {
         this.ctx.lineWidth = 4 * zoom;          // 边框加粗方便分辨敌我.边框也随比例缩放一点，不然太粗/太细
         this.ctx.strokeStyle = teamColor; // 阵营色
         this.ctx.stroke(); 
-        if (zoom > 0.6) { // 如果太小了就不显示字了，省得糊成一团
+        if (zoom > 0.4) { // 如果太小了就不显示字了，省得糊成一团
             this.ctx.fillStyle = "white";
             this.ctx.font = `bold ${14 * zoom}px Arial`;
             this.ctx.textAlign = "center";
@@ -93,9 +93,6 @@ export class Renderer {
                 sPos.y < viewBounds.top || sPos.y > viewBounds.bottom) return;
             this.drawUnit(sPos.x, sPos.y, unit, camera.zoom);
         });
-        // if(this.debugInfo) {
-        //     this.debugInfo.textContent = `Camera: ${Math.round(camera.x)}, ${Math.round(camera.y)}`;
-        // }
         if(this.debugInfo) {// 更新 UI
             // 显示一下当前的 Zoom 倍率
             this.debugInfo.textContent =
