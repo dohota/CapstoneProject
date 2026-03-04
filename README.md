@@ -1,13 +1,17 @@
-the order that i created table in postgresql database：
+## the order that i created table in postgresql database：
+```sql
 postgres=# CREATE DATABASE mydb;
 CREATE DATABASE
+
 postgres=# \c mydb
 You are now connected to database "mydb" as user "karl".
+
 mydb=# CREATE TABLE milling_train (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL
 );
 CREATE TABLE
+
 mydb=# CREATE TABLE project_plan (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -15,6 +19,7 @@ mydb=# CREATE TABLE project_plan (
     year INTEGER
 );
 CREATE TABLE
+
 mydb=# CREATE TABLE milling_unit (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
@@ -32,16 +37,19 @@ mydb=# CREATE TABLE milling_unit (
     milling_train_id INTEGER REFERENCES milling_train(id)
 );
 CREATE TABLE
+
 mydb=# CREATE TABLE roller (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100)
 );
 CREATE TABLE
+
 mydb=# CREATE TABLE roller_position (
     id SERIAL PRIMARY KEY,
     position VARCHAR(50) CHECK (position IN ('UF','PF','Mill'))
 );
 CREATE TABLE
+
 mydb=# CREATE TABLE roller_allow_position (
     id SERIAL PRIMARY KEY,
     roller_id INTEGER REFERENCES roller(id),
@@ -49,6 +57,7 @@ mydb=# CREATE TABLE roller_allow_position (
     roller_position_id INTEGER REFERENCES roller_position(id)
 );
 CREATE TABLE
+
 mydb=# CREATE TABLE pinion (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
@@ -101,3 +110,4 @@ mydb=# CREATE TABLE milset_data (
     scene_analyze_id INTEGER
 );
 CREATE TABLE
+```
